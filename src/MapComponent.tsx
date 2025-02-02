@@ -1,9 +1,6 @@
-import { useEffect, createElement, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import maplibregl, { Map } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlane } from '@fortawesome/free-solid-svg-icons';
-import ReactDOM from 'react-dom';
 import { airports } from './airportsData';
 import { getTotalDailyFlights, dailyFlights } from './flightData';
 import * as turf from '@turf/turf';
@@ -124,6 +121,10 @@ function createFlightRoutes(map: Map): RouteFeature[] {
 function animateAirplane(map: Map, route: RouteFeature, onComplete: () => void) {
   const planeId = `airplane-${Date.now()}`;
   
+  // Clean up any existing layers and sources with this ID
+  if (map.getLayer(planeId)) map.removeLayer(planeId);
+  if (map.getSource(planeId)) map.removeSource(planeId);
+
   // Create a GeoJSON point feature for the airplane
   const point = {
     type: 'Feature' as const,
@@ -157,46 +158,96 @@ function animateAirplane(map: Map, route: RouteFeature, onComplete: () => void) 
     }
   });
 
-  let currentIndex = 0;
-  const STEPS_PER_FRAME = 0.5; // Reduced from 5 to 0.5 for 10x slower movement
+  // Keep track of all active airplane layers
+  const activeAirplanes = new Set<string>();
+  activeAirplanes.add(planeId);
 
-  function animate() {
-    if (currentIndex >= route.geometry.coordinates.length - 1) {
-      if (map.getLayer(planeId)) map.removeLayer(planeId);
+  let progress = 0; // Progress along the entire path (0 to 1)
+  let lastTimestamp: number | null = null;
+  const SPEED = 250; // degrees per second
+
+  // Calculate total route length in degrees
+  let totalLength = 0;
+  for (let i = 0; i < route.geometry.coordinates.length - 1; i++) {
+    totalLength += turf.distance(
+      turf.point(route.geometry.coordinates[i]),
+      turf.point(route.geometry.coordinates[i + 1])
+    );
+  }
+
+  function animate(timestamp: number) {
+    if (!lastTimestamp) {
+      lastTimestamp = timestamp;
+      requestAnimationFrame(animate);
+      return;
+    }
+
+    const deltaTime = (timestamp - lastTimestamp) / 1000; // Convert to seconds
+    lastTimestamp = timestamp;
+
+    // Update progress based on speed and total length
+    progress += (SPEED * deltaTime) / totalLength;
+
+    if (progress >= 1) {
+      // Clean up this airplane's layers and sources
+      if (map.getLayer(planeId)) {
+        map.removeLayer(planeId);
+        activeAirplanes.delete(planeId);
+      }
       if (map.getSource(planeId)) map.removeSource(planeId);
       onComplete();
       return;
     }
 
-    // Move multiple steps per frame
-    currentIndex = Math.min(currentIndex + STEPS_PER_FRAME, route.geometry.coordinates.length - 1);
-    
-    // Use Math.floor to ensure valid integer indices
-    const currentPosIndex = Math.floor(Math.max(0, currentIndex - STEPS_PER_FRAME));
-    const nextPosIndex = Math.floor(currentIndex);
-    
-    const currentPos = route.geometry.coordinates[currentPosIndex];
-    const nextPos = route.geometry.coordinates[nextPosIndex];
+    // Find current position along the path
+    const targetDistance = totalLength * progress;
+    let currentDistance = 0;
+    let currentIndex = 0;
 
-    // Calculate bearing for airplane rotation
-    const bearing = turf.bearing(
-      turf.point(currentPos),
-      turf.point(nextPos)
-    );
+    // Find the current segment
+    while (currentIndex < route.geometry.coordinates.length - 1) {
+      const segmentDistance = turf.distance(
+        turf.point(route.geometry.coordinates[currentIndex]),
+        turf.point(route.geometry.coordinates[currentIndex + 1])
+      );
 
-    // Update airplane position and rotation
-    const source = map.getSource(planeId);
-    if (source && source.type === 'geojson') {
-      (source as maplibregl.GeoJSONSource).setData({
-        type: 'Feature',
-        properties: {
-          bearing: bearing
-        },
-        geometry: {
-          type: 'Point',
-          coordinates: nextPos
+      if (currentDistance + segmentDistance > targetDistance) {
+        // Found the segment containing our position
+        const segmentProgress = (targetDistance - currentDistance) / segmentDistance;
+        const currentPos = route.geometry.coordinates[currentIndex];
+        const nextPos = route.geometry.coordinates[currentIndex + 1];
+
+        // Interpolate position
+        const position: [number, number] = [
+          currentPos[0] + (nextPos[0] - currentPos[0]) * segmentProgress,
+          currentPos[1] + (nextPos[1] - currentPos[1]) * segmentProgress
+        ];
+
+        // Calculate bearing for airplane rotation
+        const bearing = turf.bearing(
+          turf.point(currentPos),
+          turf.point(nextPos)
+        );
+
+        // Update airplane position and rotation
+        const source = map.getSource(planeId);
+        if (source && source.type === 'geojson') {
+          (source as maplibregl.GeoJSONSource).setData({
+            type: 'Feature',
+            properties: {
+              bearing: bearing
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: position
+            }
+          });
         }
-      });
+        break;
+      }
+
+      currentDistance += segmentDistance;
+      currentIndex++;
     }
 
     requestAnimationFrame(animate);
@@ -210,8 +261,8 @@ function startRandomFlightAnimation(map: Map, routes: RouteFeature[]) {
   const randomRoute = routes[Math.floor(Math.random() * routes.length)];
   
   animateAirplane(map, randomRoute, () => {
-    // Schedule next animation after 3 seconds
-    setTimeout(() => startRandomFlightAnimation(map, routes), 3000);
+    // Schedule next animation after 1 second
+    setTimeout(() => startRandomFlightAnimation(map, routes), 1000);
   });
 }
 
@@ -222,11 +273,17 @@ function createMarker(airport: { name: string; coordinates: [number, number]; si
   iconElement.style.width = '0';
   iconElement.style.height = '0';
 
-  const icon = createElement(FontAwesomeIcon, {
-    icon: faPlane,
-    style: { fontSize: `${sizeToScale[size] * 24}px`, color: '#D3D3D3', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-90deg) rotate(30deg)' }
-  });
-  ReactDOM.render(icon, iconElement);
+  // Create dot element
+  const dot = document.createElement('div');
+  dot.style.width = `${sizeToScale[size] * 8}px`;
+  dot.style.height = `${sizeToScale[size] * 8}px`;
+  dot.style.borderRadius = '50%';
+  dot.style.backgroundColor = '#D3D3D3';
+  dot.style.position = 'absolute';
+  dot.style.left = '50%';
+  dot.style.top = '50%';
+  dot.style.transform = 'translate(-50%, -50%)';
+  iconElement.appendChild(dot);
 
   setTimeout(() => {
     const textElement = document.createElement('span');
@@ -272,36 +329,40 @@ function MapComponent() {
     mapRef.current = map;
 
     map.on('load', () => {
-      // Create a simple triangle icon for the airplane
-      const size = 24;
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      
-      if (ctx) {
-        ctx.fillStyle = '#D3D3D3';
-        ctx.beginPath();
-        ctx.moveTo(size/2, 0);
-        ctx.lineTo(size, size);
-        ctx.lineTo(0, size);
-        ctx.closePath();
-        ctx.fill();
+      // Create airplane icon
+      const airplane = new Image();
+      airplane.onload = () => {
+        map.addImage('airplane', airplane);
+        
+        // First create routes and markers
+        const routes = createFlightRoutes(map);
+        airports.forEach(airport => createMarker(airport, map));
 
-        // Convert canvas to ImageData
-        const imageData = ctx.getImageData(0, 0, size, size);
-        map.addImage('airplane', { width: size, height: size, data: new Uint8Array(imageData.data.buffer) });
-      }
-
-      // First create routes and markers
-      const routes = createFlightRoutes(map);
-      airports.forEach(airport => createMarker(airport, map));
-
-      // Start animations
-      startRandomFlightAnimation(map, routes);
+        // Start animations
+        startRandomFlightAnimation(map, routes);
+      };
+      airplane.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+          <path fill="#D3D3D3" d="M21 14.58c0-.36-.19-.69-.49-.89L16 10.77V5.5A1.5 1.5 0 0 0 14.5 4h-5A1.5 1.5 0 0 0 8 5.5v5.27l-4.51 2.92c-.3.2-.49.53-.49.89 0 .7.68 1.2 1.34.97L8 14v3L6.5 18.5v1.25L9 19l3 1 3-1 2.5.75V18.5L16 17v-3l3.66 1.55c.66.23 1.34-.27 1.34-.97z"/>
+        </svg>
+      `);
     });
 
-    return () => map.remove();
+    return () => {
+      // Clean up all airplane layers and sources
+      if (map && map.getStyle()) {
+        const layers = map.getStyle().layers || [];
+        layers.forEach(layer => {
+          if (layer.id.startsWith('airplane-')) {
+            map.removeLayer(layer.id);
+            if (map.getSource(layer.id)) {
+              map.removeSource(layer.id);
+            }
+          }
+        });
+      }
+      map.remove();
+    };
   }, []);
 
   return <div id="map" style={{ height: '100vh', width: '100%' }} />;
