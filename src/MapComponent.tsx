@@ -128,12 +128,23 @@ function animateAirplane(map: Map, route: RouteFeature, onComplete: () => void) 
   // Create a GeoJSON point feature for the airplane
   const point = {
     type: 'Feature' as const,
-    properties: {},
+    properties: {
+      bearing: 0 // Add initial bearing
+    },
     geometry: {
       type: 'Point' as const,
       coordinates: route.geometry.coordinates[0]
     }
   };
+
+  // Calculate initial bearing
+  if (route.geometry.coordinates.length > 1) {
+    const initialBearing = turf.bearing(
+      turf.point(route.geometry.coordinates[0]),
+      turf.point(route.geometry.coordinates[1])
+    );
+    point.properties.bearing = initialBearing;
+  }
 
   // Add a new source and layer for this specific airplane
   map.addSource(planeId, {
@@ -148,7 +159,7 @@ function animateAirplane(map: Map, route: RouteFeature, onComplete: () => void) 
     layout: {
       'icon-image': 'airplane',
       'icon-size': 1.5,
-      'icon-rotate': ['get', 'bearing'],
+      'icon-rotate': ['coalesce', ['get', 'bearing'], 0],
       'icon-rotation-alignment': 'map',
       'icon-allow-overlap': true,
       'icon-ignore-placement': true
@@ -256,16 +267,6 @@ function animateAirplane(map: Map, route: RouteFeature, onComplete: () => void) 
   requestAnimationFrame(animate);
 }
 
-function startRandomFlightAnimation(map: Map, routes: RouteFeature[]) {
-  // Pick a random route
-  const randomRoute = routes[Math.floor(Math.random() * routes.length)];
-  
-  animateAirplane(map, randomRoute, () => {
-    // Schedule next animation after 1 second
-    setTimeout(() => startRandomFlightAnimation(map, routes), 1000);
-  });
-}
-
 function createMarker(airport: { name: string; coordinates: [number, number]; size: 'small' | 'medium' | 'large' }, map: Map) {
   const size = airport.size;
   const iconElement = document.createElement('div');
@@ -317,6 +318,8 @@ function createMarker(airport: { name: string; coordinates: [number, number]; si
 
 function MapComponent() {
   const mapRef = useRef<Map | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  const routesRef = useRef<RouteFeature[]>([]);
 
   useEffect(() => {
     const map = new maplibregl.Map({
@@ -328,18 +331,50 @@ function MapComponent() {
 
     mapRef.current = map;
 
+    const startAnimations = () => {
+      // Only start if we have routes and the map is ready
+      if (routesRef.current.length === 0 || !map.loaded()) return;
+
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
+      intervalRef.current = window.setInterval(() => {
+        try {
+          const randomRoute = routesRef.current[Math.floor(Math.random() * routesRef.current.length)];
+          animateAirplane(map, randomRoute, () => {
+            // Just cleanup, no need to spawn new plane here
+          });
+        } catch (error) {
+          console.error('Animation error:', error);
+          // Stop the interval if we hit an error
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+        }
+      }, 1000);
+    };
+
     map.on('load', () => {
       // Create airplane icon
       const airplane = new Image();
       airplane.onload = () => {
-        map.addImage('airplane', airplane);
-        
-        // First create routes and markers
-        const routes = createFlightRoutes(map);
-        airports.forEach(airport => createMarker(airport, map));
+        try {
+          if (!map.hasImage('airplane')) {
+            map.addImage('airplane', airplane);
+          }
+          
+          // First create routes and markers
+          const routes = createFlightRoutes(map);
+          routesRef.current = routes;
+          airports.forEach(airport => createMarker(airport, map));
 
-        // Start animations
-        startRandomFlightAnimation(map, routes);
+          // Start animations only when everything is ready
+          map.once('idle', startAnimations);
+        } catch (error) {
+          console.error('Initialization error:', error);
+        }
       };
       airplane.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
@@ -349,17 +384,26 @@ function MapComponent() {
     });
 
     return () => {
+      // Clear the interval
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
       // Clean up all airplane layers and sources
-      if (map && map.getStyle()) {
-        const layers = map.getStyle().layers || [];
-        layers.forEach(layer => {
-          if (layer.id.startsWith('airplane-')) {
-            map.removeLayer(layer.id);
-            if (map.getSource(layer.id)) {
-              map.removeSource(layer.id);
+      if (map && map.loaded() && map.getStyle()) {
+        try {
+          const layers = map.getStyle().layers || [];
+          layers.forEach(layer => {
+            if (layer.id.startsWith('airplane-')) {
+              map.removeLayer(layer.id);
+              if (map.getSource(layer.id)) {
+                map.removeSource(layer.id);
+              }
             }
-          }
-        });
+          });
+        } catch (error) {
+          console.error('Cleanup error:', error);
+        }
       }
       map.remove();
     };
