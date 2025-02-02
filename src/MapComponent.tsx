@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { airports } from './airportsData';
 import { getTotalDailyFlights, dailyFlights } from './flightData';
 import * as turf from '@turf/turf';
+import { faPlane } from '@fortawesome/free-solid-svg-icons';
 
 const sizeToScale = {
   small: 0.8,
@@ -111,7 +112,7 @@ function createFlightRoutes(map: Map): RouteFeature[] {
     paint: {
       'line-color': '#D3D3D3',
       'line-width': 2,
-      'line-opacity': 0.3
+      'line-opacity': 0.15
     }
   });
 
@@ -165,14 +166,15 @@ function animateAirplane(map: Map, route: RouteFeature, onComplete: () => void) 
       source: planeId,
       layout: {
         'icon-image': 'airplane',
-        'icon-size': 1.5,
-        'icon-rotate': ['coalesce', ['get', 'bearing'], 0],
+        'icon-size': 0.6,
+        'icon-rotate': ['-', ['coalesce', ['get', 'bearing'], 0], 90],
         'icon-rotation-alignment': 'map',
         'icon-allow-overlap': true,
         'icon-ignore-placement': true
       },
       paint: {
-        'icon-opacity': 1
+        'icon-opacity': 1,
+        'icon-color': '#ffffff'
       }
     });
 
@@ -351,9 +353,13 @@ function MapComponent() {
     map.on('load', () => {
       const airplane = new Image();
       airplane.onload = () => {
-        if (!map.hasImage('airplane')) {
-          map.addImage('airplane', airplane);
+        if (map.hasImage('airplane')) {
+          map.removeImage('airplane');
         }
+        map.addImage('airplane', airplane, { 
+          pixelRatio: 1,
+          sdf: true
+        });
         
         const routes = createFlightRoutes(map);
         routesRef.current = routes;
@@ -371,11 +377,15 @@ function MapComponent() {
         }, 1000);
       };
 
-      airplane.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-          <path fill="#D3D3D3" d="M21 14.58c0-.36-.19-.69-.49-.89L16 10.77V5.5A1.5 1.5 0 0 0 14.5 4h-5A1.5 1.5 0 0 0 8 5.5v5.27l-4.51 2.92c-.3.2-.49.53-.49.89 0 .7.68 1.2 1.34.97L8 14v3L6.5 18.5v1.25L9 19l3 1 3-1 2.5.75V18.5L16 17v-3l3.66 1.55c.66.23 1.34-.27 1.34-.97z"/>
-        </svg>
-      `);
+      // Use the FontAwesome plane icon path directly
+      const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="32" height="32">
+        <path fill="white" d="${faPlane.icon[4]}"/>
+      </svg>`;
+      
+      airplane.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+
+      // Preload the image to ensure it's ready
+      airplane.crossOrigin = 'anonymous';
     });
 
     return () => {
@@ -385,6 +395,12 @@ function MapComponent() {
 
       if (map && map.getStyle()) {
         try {
+          // Remove airplane image
+          if (map.hasImage('airplane')) {
+            map.removeImage('airplane');
+          }
+          
+          // Clean up airplane layers and sources
           const layers = map.getStyle().layers || [];
           layers.forEach(layer => {
             if (layer.id.startsWith('airplane-')) {
