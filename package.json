@@ -14,6 +14,8 @@
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@turf/turf": "^7.2.0",
+    "@types/turf": "^3.5.32",
     "antd": "^5.23.3",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.9.4",
