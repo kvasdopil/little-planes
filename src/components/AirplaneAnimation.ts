@@ -2,173 +2,263 @@ import maplibregl, { Map } from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { RouteFeature } from '../types/mapTypes';
 
-export function animateAirplane(
+const AIRPLANE_SPEED = 250; // degrees per second
+const RETURN_FLIGHT_DELAY = 200; // milliseconds
+
+interface AnimationState {
+  progress: number;
+  lastTimestamp: number | null;
+  animationFrameId?: number;
+}
+
+interface FlightConfig {
+  route: RouteFeature;
+  speed?: number;
+  onComplete?: () => void;
+  onReturnComplete?: () => void;
+  returnDelay?: number;
+  shouldReturn?: boolean;
+}
+
+function createReturnRoute(route: RouteFeature): RouteFeature {
+  return {
+    ...route,
+    geometry: {
+      ...route.geometry,
+      coordinates: [...route.geometry.coordinates].reverse(),
+    },
+  };
+}
+
+function calculateTotalLength(coordinates: [number, number][]): number {
+  return coordinates
+    .slice(0, -1)
+    .reduce(
+      (total, coord, i) =>
+        total +
+        turf.distance(turf.point(coord), turf.point(coordinates[i + 1])),
+      0
+    );
+}
+
+function setupMapResources(
   map: Map,
-  route: RouteFeature,
-  onComplete: () => void
+  planeId: string,
+  initialCoordinates: [number, number][],
+  initialBearing: number
 ) {
-  if (!map || !map.getStyle()) {
-    onComplete();
+  // Create a GeoJSON point feature for the airplane
+  const point = {
+    type: 'Feature' as const,
+    properties: { bearing: initialBearing },
+    geometry: {
+      type: 'Point' as const,
+      coordinates: initialCoordinates[0],
+    },
+  };
+
+  // Add source and layer
+  map.addSource(planeId, {
+    type: 'geojson',
+    data: point,
+  });
+
+  map.addLayer({
+    id: planeId,
+    type: 'symbol',
+    source: planeId,
+    layout: {
+      'icon-image': 'airplane',
+      'icon-size': 0.6,
+      'icon-rotate': ['-', ['coalesce', ['get', 'bearing'], 0], 90],
+      'icon-rotation-alignment': 'map',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+    paint: {
+      'icon-opacity': 1,
+      'icon-color': '#ffffff',
+    },
+  });
+}
+
+function cleanupMapResources(map: Map, planeId: string) {
+  if (map && map.getStyle()) {
+    if (map.getLayer(planeId)) map.removeLayer(planeId);
+    if (map.getSource(planeId)) map.removeSource(planeId);
+  }
+}
+
+function updatePlanePosition(
+  map: Map,
+  planeId: string,
+  position: [number, number],
+  bearing: number
+) {
+  const source = map.getSource(planeId);
+  if (source && source.type === 'geojson') {
+    (source as maplibregl.GeoJSONSource).setData({
+      type: 'Feature',
+      properties: { bearing },
+      geometry: {
+        type: 'Point',
+        coordinates: position,
+      },
+    });
+  }
+}
+
+function calculateCurrentPosition(
+  coordinates: [number, number][],
+  targetDistance: number
+): { position: [number, number]; bearing: number } {
+  let currentDistance = 0;
+  let currentIndex = 0;
+
+  while (currentIndex < coordinates.length - 1) {
+    const segmentDistance = turf.distance(
+      turf.point(coordinates[currentIndex]),
+      turf.point(coordinates[currentIndex + 1])
+    );
+
+    if (currentDistance + segmentDistance > targetDistance) {
+      const segmentProgress =
+        (targetDistance - currentDistance) / segmentDistance;
+
+      const currentPos = coordinates[currentIndex];
+      const nextPos = coordinates[currentIndex + 1];
+
+      const position: [number, number] = [
+        currentPos[0] + (nextPos[0] - currentPos[0]) * segmentProgress,
+        currentPos[1] + (nextPos[1] - currentPos[1]) * segmentProgress,
+      ];
+
+      const bearing = turf.bearing(turf.point(currentPos), turf.point(nextPos));
+
+      return { position, bearing };
+    }
+
+    currentDistance += segmentDistance;
+    currentIndex++;
+  }
+
+  // Fallback to last position if something goes wrong
+  return {
+    position: coordinates[coordinates.length - 1],
+    bearing: 0,
+  };
+}
+
+function initializeReturnFlight(map: Map, config: FlightConfig) {
+  const returnRoute = createReturnRoute(config.route);
+  const returnConfig: FlightConfig = {
+    ...config,
+    route: returnRoute,
+    shouldReturn: false, // Prevent infinite returns
+    onComplete: config.onReturnComplete || config.onComplete,
+  };
+
+  setTimeout(
+    () => initializeFlight(map, returnConfig),
+    config.returnDelay || RETURN_FLIGHT_DELAY
+  );
+}
+
+function initializeFlight(map: Map, config: FlightConfig) {
+  if (!map?.getStyle()) {
+    config.onComplete?.();
     return;
   }
 
-  const planeId = `airplane-${Date.now()}`;
+  const isReturnFlight = !config.shouldReturn;
+  const planeId = `airplane-${Date.now()}${isReturnFlight ? '-return' : ''}`;
+  const coordinates = config.route.geometry.coordinates;
+  const totalLength = calculateTotalLength(coordinates);
+
+  const state: AnimationState = {
+    progress: 0,
+    lastTimestamp: null,
+  };
 
   try {
-    // Clean up any existing layers and sources with this ID
-    if (map.getLayer(planeId)) map.removeLayer(planeId);
-    if (map.getSource(planeId)) map.removeSource(planeId);
-
-    // Create a GeoJSON point feature for the airplane
-    const point = {
-      type: 'Feature' as const,
-      properties: {
-        bearing: 0,
-      },
-      geometry: {
-        type: 'Point' as const,
-        coordinates: route.geometry.coordinates[0],
-      },
-    };
-
     // Calculate initial bearing
-    if (route.geometry.coordinates.length > 1) {
-      const initialBearing = turf.bearing(
-        turf.point(route.geometry.coordinates[0]),
-        turf.point(route.geometry.coordinates[1])
-      );
-      point.properties.bearing = initialBearing;
-    }
+    const initialBearing =
+      coordinates.length > 1
+        ? turf.bearing(turf.point(coordinates[0]), turf.point(coordinates[1]))
+        : 0;
 
-    // Add a new source and layer for this specific airplane
-    map.addSource(planeId, {
-      type: 'geojson',
-      data: point,
-    });
-
-    map.addLayer({
-      id: planeId,
-      type: 'symbol',
-      source: planeId,
-      layout: {
-        'icon-image': 'airplane',
-        'icon-size': 0.6,
-        'icon-rotate': ['-', ['coalesce', ['get', 'bearing'], 0], 90],
-        'icon-rotation-alignment': 'map',
-        'icon-allow-overlap': true,
-        'icon-ignore-placement': true,
-      },
-      paint: {
-        'icon-opacity': 1,
-        'icon-color': '#ffffff',
-      },
-    });
-
-    let progress = 0;
-    let lastTimestamp: number | null = null;
-    const SPEED = 250;
-
-    // Calculate total route length in degrees
-    let totalLength = 0;
-    for (let i = 0; i < route.geometry.coordinates.length - 1; i++) {
-      totalLength += turf.distance(
-        turf.point(route.geometry.coordinates[i]),
-        turf.point(route.geometry.coordinates[i + 1])
-      );
-    }
-
-    let animationFrameId: number;
+    setupMapResources(map, planeId, coordinates, initialBearing);
 
     function animate(timestamp: number) {
       try {
-        if (!lastTimestamp) {
-          lastTimestamp = timestamp;
-          animationFrameId = requestAnimationFrame(animate);
+        if (!state.lastTimestamp) {
+          state.lastTimestamp = timestamp;
+          state.animationFrameId = requestAnimationFrame(animate);
           return;
         }
 
-        const deltaTime = (timestamp - lastTimestamp) / 1000;
-        lastTimestamp = timestamp;
+        const deltaTime = (timestamp - state.lastTimestamp) / 1000;
+        state.lastTimestamp = timestamp;
+        state.progress +=
+          ((config.speed || AIRPLANE_SPEED) * deltaTime) / totalLength;
 
-        progress += (SPEED * deltaTime) / totalLength;
-
-        if (progress >= 1) {
+        if (state.progress >= 1) {
           cleanup();
           return;
         }
 
-        const targetDistance = totalLength * progress;
-        let currentDistance = 0;
-        let currentIndex = 0;
+        const targetDistance = totalLength * state.progress;
+        const { position, bearing } = calculateCurrentPosition(
+          coordinates,
+          targetDistance
+        );
+        updatePlanePosition(map, planeId, position, bearing);
 
-        while (currentIndex < route.geometry.coordinates.length - 1) {
-          const segmentDistance = turf.distance(
-            turf.point(route.geometry.coordinates[currentIndex]),
-            turf.point(route.geometry.coordinates[currentIndex + 1])
-          );
-
-          if (currentDistance + segmentDistance > targetDistance) {
-            const segmentProgress =
-              (targetDistance - currentDistance) / segmentDistance;
-            const currentPos = route.geometry.coordinates[currentIndex];
-            const nextPos = route.geometry.coordinates[currentIndex + 1];
-
-            const position: [number, number] = [
-              currentPos[0] + (nextPos[0] - currentPos[0]) * segmentProgress,
-              currentPos[1] + (nextPos[1] - currentPos[1]) * segmentProgress,
-            ];
-
-            const bearing = turf.bearing(
-              turf.point(currentPos),
-              turf.point(nextPos)
-            );
-
-            const source = map.getSource(planeId);
-            if (source && source.type === 'geojson') {
-              (source as maplibregl.GeoJSONSource).setData({
-                type: 'Feature',
-                properties: {
-                  bearing: bearing,
-                },
-                geometry: {
-                  type: 'Point',
-                  coordinates: position,
-                },
-              });
-            }
-            break;
-          }
-
-          currentDistance += segmentDistance;
-          currentIndex++;
-        }
-
-        animationFrameId = requestAnimationFrame(animate);
+        state.animationFrameId = requestAnimationFrame(animate);
       } catch (error) {
-        console.error('Animation error:', error);
+        console.error('Animation frame error:', error);
         cleanup();
       }
     }
 
     function cleanup() {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      if (state.animationFrameId) {
+        cancelAnimationFrame(state.animationFrameId);
       }
 
       try {
-        if (map && map.getStyle()) {
-          if (map.getLayer(planeId)) map.removeLayer(planeId);
-          if (map.getSource(planeId)) map.removeSource(planeId);
-        }
+        cleanupMapResources(map, planeId);
       } catch (error) {
-        console.error('Cleanup error:', error);
+        console.error('Resource cleanup error:', error);
       }
-      onComplete();
+
+      if (config.shouldReturn) {
+        initializeReturnFlight(map, config);
+      } else {
+        config.onComplete?.();
+      }
     }
 
-    animationFrameId = requestAnimationFrame(animate);
+    state.animationFrameId = requestAnimationFrame(animate);
   } catch (error) {
     console.error('Animation setup error:', error);
-    onComplete();
+    cleanupMapResources(map, planeId);
+    config.onComplete?.();
   }
+}
+
+// Main export function - maintains backward compatibility
+export function animateAirplane(
+  map: Map,
+  route: RouteFeature,
+  onComplete: () => void,
+  isReturnFlight: boolean = false
+) {
+  const config: FlightConfig = {
+    route,
+    onComplete,
+    shouldReturn: !isReturnFlight,
+  };
+
+  initializeFlight(map, config);
 }
