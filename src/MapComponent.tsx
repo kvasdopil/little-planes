@@ -18,7 +18,7 @@ function MapComponent() {
       container: 'map',
       style: 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
       center: [18.6435, 60.1282],
-      zoom: 5
+      zoom: 5,
     });
 
     mapRef.current = map;
@@ -29,14 +29,14 @@ function MapComponent() {
         if (map.hasImage('airplane')) {
           map.removeImage('airplane');
         }
-        map.addImage('airplane', airplane, { 
+        map.addImage('airplane', airplane, {
           pixelRatio: 1,
-          sdf: true
+          sdf: true,
         });
-        
+
         const routes = createFlightRoutes(map);
         routesRef.current = routes;
-        airports.forEach(airport => createMarker(airport, map));
+        airports.forEach((airport) => createMarker(airport, map));
 
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -54,8 +54,9 @@ function MapComponent() {
       const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" width="32" height="32">
         <path fill="white" d="${faPlane.icon[4]}"/>
       </svg>`;
-      
-      airplane.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+
+      airplane.src =
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
     });
 
     return () => {
@@ -69,10 +70,10 @@ function MapComponent() {
           if (map.hasImage('airplane')) {
             map.removeImage('airplane');
           }
-          
+
           // Clean up airplane layers and sources
           const layers = map.getStyle().layers || [];
-          layers.forEach(layer => {
+          layers.forEach((layer) => {
             if (layer.id.startsWith('airplane-')) {
               map.removeLayer(layer.id);
               if (map.getSource(layer.id)) {
@@ -91,4 +92,4 @@ function MapComponent() {
   return <div id="map" style={{ height: '100vh', width: '100%' }} />;
 }
 
-export default MapComponent; 
+export default MapComponent;

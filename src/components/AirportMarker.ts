@@ -37,17 +37,19 @@ export function createMarker(airport: Airport, map: Map) {
 
   const airportName = airport.name.replace('Airport', '').trim();
   const dailyFlights = getTotalDailyFlights(airportName);
-  
+
   new maplibregl.Marker({
     element: iconElement,
-    draggable: false
+    draggable: false,
   })
     .setLngLat(airport.coordinates)
-    .setPopup(new maplibregl.Popup().setHTML(
-      `<div style="color: #D3D3D3">
+    .setPopup(
+      new maplibregl.Popup().setHTML(
+        `<div style="color: #D3D3D3">
         <strong>${airportName}</strong><br>
         Average daily domestic flights: ${dailyFlights}
       </div>`
-    ))
+      )
+    )
     .addTo(map);
-} 
+}

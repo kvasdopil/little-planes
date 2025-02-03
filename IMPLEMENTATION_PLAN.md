@@ -119,3 +119,33 @@ src/
 - Proper error handling
 - Performance optimization
 - Clear separation of concerns
+
+## TypeScript Configuration
+
+The project uses a dual TypeScript configuration setup, following Vite's recommended practices:
+
+### Main Configuration (tsconfig.json)
+
+- Target: ES2022 for modern browser features
+- Strict type checking enabled
+- DOM and DOM.Iterable type definitions
+- React JSX support
+- Path aliases for clean imports
+- Module resolution set to "bundler"
+- Source maps and declaration files enabled
+
+### Node Configuration (tsconfig.node.json)
+
+- Separate configuration for Vite and build tools
+- Node.js specific settings
+- ESM module system
+- Synthetic default imports allowed
+- References the main tsconfig.json
+- Used by vite.config.ts and other build scripts
+
+This separation ensures:
+
+- Browser code doesn't include Node.js types
+- Build tools have access to Node.js features
+- Clear boundary between frontend and build environments
+- Proper type checking in both contexts

@@ -2,14 +2,18 @@ import maplibregl, { Map } from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { RouteFeature } from '../types/mapTypes';
 
-export function animateAirplane(map: Map, route: RouteFeature, onComplete: () => void) {
+export function animateAirplane(
+  map: Map,
+  route: RouteFeature,
+  onComplete: () => void
+) {
   if (!map || !map.getStyle()) {
     onComplete();
     return;
   }
 
   const planeId = `airplane-${Date.now()}`;
-  
+
   try {
     // Clean up any existing layers and sources with this ID
     if (map.getLayer(planeId)) map.removeLayer(planeId);
@@ -19,12 +23,12 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
     const point = {
       type: 'Feature' as const,
       properties: {
-        bearing: 0
+        bearing: 0,
       },
       geometry: {
         type: 'Point' as const,
-        coordinates: route.geometry.coordinates[0]
-      }
+        coordinates: route.geometry.coordinates[0],
+      },
     };
 
     // Calculate initial bearing
@@ -39,7 +43,7 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
     // Add a new source and layer for this specific airplane
     map.addSource(planeId, {
       type: 'geojson',
-      data: point
+      data: point,
     });
 
     map.addLayer({
@@ -52,12 +56,12 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
         'icon-rotate': ['-', ['coalesce', ['get', 'bearing'], 0], 90],
         'icon-rotation-alignment': 'map',
         'icon-allow-overlap': true,
-        'icon-ignore-placement': true
+        'icon-ignore-placement': true,
       },
       paint: {
         'icon-opacity': 1,
-        'icon-color': '#ffffff'
-      }
+        'icon-color': '#ffffff',
+      },
     });
 
     let progress = 0;
@@ -87,7 +91,7 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
         lastTimestamp = timestamp;
 
         progress += (SPEED * deltaTime) / totalLength;
-        
+
         if (progress >= 1) {
           cleanup();
           return;
@@ -104,13 +108,14 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
           );
 
           if (currentDistance + segmentDistance > targetDistance) {
-            const segmentProgress = (targetDistance - currentDistance) / segmentDistance;
+            const segmentProgress =
+              (targetDistance - currentDistance) / segmentDistance;
             const currentPos = route.geometry.coordinates[currentIndex];
             const nextPos = route.geometry.coordinates[currentIndex + 1];
 
             const position: [number, number] = [
               currentPos[0] + (nextPos[0] - currentPos[0]) * segmentProgress,
-              currentPos[1] + (nextPos[1] - currentPos[1]) * segmentProgress
+              currentPos[1] + (nextPos[1] - currentPos[1]) * segmentProgress,
             ];
 
             const bearing = turf.bearing(
@@ -123,12 +128,12 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
               (source as maplibregl.GeoJSONSource).setData({
                 type: 'Feature',
                 properties: {
-                  bearing: bearing
+                  bearing: bearing,
                 },
                 geometry: {
                   type: 'Point',
-                  coordinates: position
-                }
+                  coordinates: position,
+                },
               });
             }
             break;
@@ -149,7 +154,7 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
-      
+
       try {
         if (map && map.getStyle()) {
           if (map.getLayer(planeId)) map.removeLayer(planeId);
@@ -166,4 +171,4 @@ export function animateAirplane(map: Map, route: RouteFeature, onComplete: () =>
     console.error('Animation setup error:', error);
     onComplete();
   }
-} 
+}

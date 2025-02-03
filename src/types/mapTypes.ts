@@ -15,4 +15,4 @@ export type Airport = {
   name: string;
   coordinates: [number, number];
   size: 'small' | 'medium' | 'large';
-}; 
+};
