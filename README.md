@@ -1,3 +1,65 @@
+# Little Planes
+
+An interactive visualization of Swedish domestic flights, showing real-time animations of airplanes traveling between major airports.
+
+## Prerequisites
+
+1. Node.js and npm installed
+2. Google Cloud SDK installed and configured
+3. Terraform installed
+4. Access to a GCP project with billing enabled
+5. Domain configured in Google Cloud DNS (guskov.dev)
+
+## Development
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Start development server:
+
+```bash
+npm run dev
+```
+
+## Deployment
+
+1. First-time setup:
+
+   - Create a GCP project and enable billing
+   - Create a GCS bucket for Terraform state:
+     ```bash
+     gsutil mb gs://little-planes-tf-state
+     ```
+   - Configure your GCP credentials:
+     ```bash
+     gcloud auth application-default login
+     ```
+
+2. Deploy the application:
+
+```bash
+npm run deploy
+```
+
+3. After deployment:
+   - Wait for SSL certificate provisioning (up to 24 hours)
+   - The website will be available at planes.guskov.dev
+
+## Architecture
+
+The application is hosted on Google Cloud Platform using:
+
+- Cloud Storage for static file hosting
+- Cloud CDN for content delivery
+- Cloud Load Balancing for HTTPS termination
+- Managed SSL certificates for HTTPS
+- Cloud DNS for domain management
+
+Infrastructure is managed using Terraform, with state stored in Google Cloud Storage.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -22,7 +84,7 @@ export default tseslint.config({
       tsconfigRootDir: import.meta.dirname,
     },
   },
-})
+});
 ```
 
 - Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
@@ -31,7 +93,7 @@ export default tseslint.config({
 
 ```js
 // eslint.config.js
-import react from 'eslint-plugin-react'
+import react from 'eslint-plugin-react';
 
 export default tseslint.config({
   // Set the react version
@@ -46,5 +108,5 @@ export default tseslint.config({
     ...react.configs.recommended.rules,
     ...react.configs['jsx-runtime'].rules,
   },
-})
+});
 ```
