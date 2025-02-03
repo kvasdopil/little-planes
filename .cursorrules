@@ -1,0 +1,79 @@
+# Never suggest git commits before confirming that changes work
+rule "no-premature-commits" {
+  when {
+    suggesting_git_commit = true
+    changes_not_confirmed = true
+  }
+  do {
+    reject "Please confirm that the changes work before committing to git"
+  }
+}
+
+# Keep code modular and organized
+rule "maintain-modularity" {
+  when {
+    file_size > 300  # lines
+  }
+  do {
+    suggest "Consider splitting this file into smaller modules"
+  }
+}
+
+# Enforce consistent naming for flight-related components
+rule "flight-naming-convention" {
+  when {
+    creating_new_file = true
+    file_contains = ["flight", "plane", "airport"]
+  }
+  do {
+    enforce_prefix = "Flight"
+    enforce_naming_convention = "PascalCase"
+  }
+}
+
+# Ensure proper cleanup in map components
+rule "map-cleanup" {
+  when {
+    file_contains = ["useEffect", "map"]
+  }
+  do {
+    require_cleanup = true
+    suggest "Remember to clean up map resources in useEffect cleanup function"
+  }
+}
+
+# Prevent direct DOM manipulation in React components
+rule "no-direct-dom" {
+  when {
+    file_extension = ".tsx"
+    code_contains = ["document.getElementById", "document.querySelector"]
+  }
+  do {
+    warn "Avoid direct DOM manipulation in React components. Use refs instead."
+  }
+}
+
+# Enforce type safety
+rule "typescript-strict" {
+  when {
+    file_extension = [".ts", ".tsx"]
+  }
+  do {
+    require_types = true
+    disallow_any = true
+  }
+}
+
+# Keep implementation details consistent
+rule "implementation-details-sync" {
+  when {
+    file_name = "IMPLEMENTATION_PLAN.md"
+    or
+    editing_code = true
+  }
+  do {
+    require_sync "Ensure code changes are reflected in IMPLEMENTATION_PLAN.md and vice versa"
+    suggest "Update IMPLEMENTATION_PLAN.md if implementation details have changed"
+    warn "Code implementation differs from IMPLEMENTATION_PLAN.md"
+  }
+} 

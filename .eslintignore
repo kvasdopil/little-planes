@@ -1,0 +1,9 @@
+# Cursor configuration
+.cursorrules
+
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/ 
