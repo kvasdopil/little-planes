@@ -11,15 +11,24 @@ An interactive map visualization showing Swedish airports and real-time flight a
 - **MapLibre GL JS**: Open-source map rendering library
 - **Turf.js**: Geospatial calculations library
 - **Stadia Maps**: Vector tile provider
+- **FontAwesome**: Icon library for airplane symbols
 
 ## Project Structure
 
 ```
 src/
-├── App.tsx                 # Main application component
-├── MapComponent.tsx        # Map rendering and animation logic
-├── airportsData.ts         # Airport locations and metadata
-└── flightData.ts          # Flight routes and frequency data
+├── components/
+│   ├── AirplaneAnimation.ts    # Airplane movement and animation logic
+│   ├── AirportMarker.ts        # Airport marker creation and styling
+│   └── FlightRoutes.ts         # Flight route generation and rendering
+├── types/
+│   └── mapTypes.ts             # TypeScript type definitions
+├── utils/
+│   └── mapUtils.ts             # Utility functions and constants
+├── App.tsx                     # Main application component
+├── MapComponent.tsx           # Map initialization and coordination
+├── airportsData.ts            # Airport locations and metadata
+└── flightData.ts             # Flight routes and frequency data
 ```
 
 ## Core Features
@@ -41,13 +50,14 @@ src/
 ### 3. Flight Routes
 
 - Curved geodesic lines between connected airports
-- Light gray color with 30% opacity
+- Light gray color with 15% opacity
 - Line thickness of 2 pixels
 - Proper great circle path calculations
 
 ### 4. Flight Animations
 
-- Airplanes spawn every second on random routes
+- FontAwesome airplane icons
+- Spawn every second on random routes
 - Constant speed of 250 degrees per second
 - Proper rotation along flight path
 - Smooth interpolation between points
@@ -71,12 +81,13 @@ src/
 
 ### 3. Resource Management
 
+- Modular code structure
+- Component-based architecture
 - Proper initialization checks
-- Error handling and recovery
 - Memory leak prevention
 - Cleanup on component unmount
 
-## Error Handling
+### 4. Error Handling
 
 - Map initialization safety checks
 - Animation error recovery
@@ -89,6 +100,7 @@ src/
 - Proper cleanup of unused resources
 - Optimized animation calculations
 - Smooth handling of multiple simultaneous animations
+- Modular code splitting for better maintainability
 
 ## Future Enhancements
 
@@ -102,7 +114,8 @@ src/
 ## Code Style and Best Practices
 
 - Consistent TypeScript types usage
-- Component-based architecture
+- Modular component architecture
 - Clean code principles
 - Proper error handling
 - Performance optimization
+- Clear separation of concerns
