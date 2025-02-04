@@ -37,12 +37,12 @@ export const Circle = ({ position = [0, 0, 0], isSelected = false, onSelect }: C
         userData={{ cursor: 'auto' }}
       >
         <circleGeometry args={[0.2, 32]} />
-        <meshBasicMaterial 
-          color={isSelected ? 'yellow' : 'white'} 
+        <meshBasicMaterial
+          color={isSelected ? 'yellow' : 'white'}
           transparent
           opacity={isHovered ? 0.5 : 1}
         />
       </mesh>
     </group>
   );
-}; 
+};
