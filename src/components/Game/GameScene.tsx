@@ -9,6 +9,11 @@ const SPACING = 2; // This will be about 20% of the screen with our camera setup
 
 type Position = 'center' | 'top' | 'right' | 'bottom' | 'left';
 
+interface Route {
+  from: Position;
+  to: Position;
+}
+
 const getCirclePosition = (position: Position): Vector3 => {
   switch (position) {
     case 'center':
@@ -24,32 +29,50 @@ const getCirclePosition = (position: Position): Vector3 => {
   }
 };
 
+const routeExists = (routes: Route[], from: Position, to: Position): boolean => {
+  return routes.some(
+    route =>
+      (route.from === from && route.to === to) || 
+      (route.from === to && route.to === from)
+  );
+};
+
 const Scene = () => {
-  const [selectedCircle, setSelectedCircle] = useState<Position | null>(null);
+  const [selectedCity, setSelectedCity] = useState<Position | null>(null);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
   const { camera, size } = useThree();
 
   const handleSelect = (position: Position) => {
-    setSelectedCircle(position === selectedCircle ? null : position);
+    if (!selectedCity) {
+      // First city selected - enter edit mode
+      setSelectedCity(position);
+    } else if (selectedCity === position) {
+      // Same city selected - exit edit mode
+      setSelectedCity(null);
+    } else {
+      // Second city selected - create route if it doesn't exist
+      if (!routeExists(routes, selectedCity, position)) {
+        setRoutes(prev => [...prev, { from: selectedCity, to: position }]);
+      }
+      setSelectedCity(null);
+    }
   };
 
   const handleBackgroundClick = (event: ThreeEvent<MouseEvent>) => {
     const mesh = event.object as Mesh;
     if (mesh.geometry instanceof PlaneGeometry) {
-      setSelectedCircle(null);
+      setSelectedCity(null);
     }
   };
 
-  const updateCursorPosition = useCallback(
-    (event: MouseEvent) => {
-      const x = (event.clientX / size.width) * 2 - 1;
-      const y = -(event.clientY / size.height) * 2 + 1;
-      const vector = new Vector3(x, y, 0);
-      vector.unproject(camera);
-      setCursorPosition(vector);
-    },
-    [camera, size]
-  );
+  const updateCursorPosition = useCallback((event: MouseEvent) => {
+    const x = (event.clientX / size.width) * 2 - 1;
+    const y = -(event.clientY / size.height) * 2 + 1;
+    const vector = new Vector3(x, y, 0);
+    vector.unproject(camera);
+    setCursorPosition(vector);
+  }, [camera, size]);
 
   useFrame(({ gl }) => {
     gl.domElement.addEventListener('mousemove', updateCursorPosition);
@@ -69,37 +92,51 @@ const Scene = () => {
         <meshBasicMaterial visible={false} />
       </mesh>
 
-      {/* Render line if there's a selected circle */}
-      {selectedCircle && <Line start={getCirclePosition(selectedCircle)} end={cursorPosition} />}
+      {/* Render existing routes */}
+      {routes.map((route, index) => (
+        <Line
+          key={`${route.from}-${route.to}-${index}`}
+          start={getCirclePosition(route.from)}
+          end={getCirclePosition(route.to)}
+        />
+      ))}
 
-      {/* Center circle */}
-      <Circle
-        position={[0, 0, 0]}
-        isSelected={selectedCircle === 'center'}
+      {/* Render route preview in edit mode */}
+      {selectedCity && (
+        <Line 
+          start={getCirclePosition(selectedCity)} 
+          end={cursorPosition}
+        />
+      )}
+
+      {/* Center city */}
+      <Circle 
+        position={[0, 0, 0]} 
+        isSelected={selectedCity === 'center'}
         onSelect={() => handleSelect('center')}
       />
-      {/* Top circle */}
-      <Circle
-        position={[0, SPACING, 0]}
-        isSelected={selectedCircle === 'top'}
+      {/* Top city */}
+      <Circle 
+        position={[0, SPACING, 0]} 
+        isSelected={selectedCity === 'top'}
         onSelect={() => handleSelect('top')}
       />
-      {/* Right circle */}
-      <Circle
-        position={[SPACING, 0, 0]}
-        isSelected={selectedCircle === 'right'}
+      {/* Right city */}
+      <Circle 
+        position={[SPACING, 0, 0]} 
+        isSelected={selectedCity === 'right'}
         onSelect={() => handleSelect('right')}
       />
-      {/* Bottom circle */}
-      <Circle
-        position={[0, -SPACING, 0]}
-        isSelected={selectedCircle === 'bottom'}
+      {/* Bottom city */}
+      <Circle 
+        position={[0, -SPACING, 0]} 
+        isSelected={selectedCity === 'bottom'}
         onSelect={() => handleSelect('bottom')}
       />
-      {/* Left circle */}
-      <Circle
-        position={[-SPACING, 0, 0]}
-        isSelected={selectedCircle === 'left'}
+      {/* Left city */}
+      <Circle 
+        position={[-SPACING, 0, 0]} 
+        isSelected={selectedCity === 'left'}
         onSelect={() => handleSelect('left')}
       />
     </>

@@ -1,4 +1,4 @@
-# Implementation Plan for Planes Game
+# Implementation Plan for City Network Game
 
 ## Project Structure
 
@@ -7,9 +7,14 @@ planes-game/
 ├── src/
 │   ├── components/
 │   │   ├── Game/
+│   │   │   ├── City.tsx
+│   │   │   ├── Route.tsx
+│   │   │   └── GameScene.tsx
 │   │   ├── UI/
 │   │   └── Scene/
 │   ├── models/
+│   │   ├── City.ts
+│   │   └── Route.ts
 │   ├── hooks/
 │   ├── utils/
 │   └── assets/
@@ -29,7 +34,7 @@ planes-game/
 
 ## Implementation Phases
 
-### Phase 1: Project Setup and Basic Structure
+### Phase 1: Project Setup and Basic Structure ✅
 
 - [x] Initialize project with Vite
 - [x] Set up TypeScript configuration
@@ -38,45 +43,112 @@ planes-game/
 - [x] Create basic project structure
 - [x] Set up deployment configuration
 
-### Phase 2: Core Game Engine
+### Phase 2: Basic Game Elements and Edit Mode ✅
 
-- [ ] Implement basic 3D scene setup
-- [ ] Add camera controls
-- [ ] Create plane model loading system
-- [ ] Implement basic physics system
-- [ ] Set up collision detection
+- [x] Create basic city components
+- [x] Implement city selection system
+- [x] Add hover effects and cursor interaction
+- [x] Implement Edit mode with route preview
+- [x] Add background click to exit Edit mode
 
-### Phase 3: Game Mechanics
+### Phase 3: Route Management ✅
 
-- [ ] Implement plane controls
-- [ ] Add basic flight physics
-- [ ] Create scoring system
-- [ ] Implement game states (start, play, end)
-- [ ] Add basic AI for enemy planes
+- [x] Implement basic route creation between cities
+- [x] Add route validation:
+  - [x] Prevent duplicate routes
+  - [x] Handle non-directional routes
+- [x] Implement route preview system
+- [x] Add route state management
 
-### Phase 4: Graphics and Effects
+### Phase 4: Advanced Route Features
 
-- [ ] Add environment (sky, terrain)
-- [ ] Implement particle effects
-- [ ] Add lighting effects
-- [ ] Create explosion animations
-- [ ] Optimize performance
+- [ ] Add route validation rules:
+  - [ ] Maximum route length
+  - [ ] Intersection prevention
+  - [ ] Resource requirements
+- [ ] Implement route deletion
+- [ ] Add route properties:
+  - [ ] Transport capacity
+  - [ ] Maintenance cost
+  - [ ] Travel time
+- [ ] Add route visualization:
+  - [ ] Direction indicators
+  - [ ] Traffic flow
+  - [ ] Capacity indicators
 
-### Phase 5: UI and Polish
+### Phase 5: City Features
 
-- [ ] Design and implement HUD
-- [ ] Add menus and settings
+- [ ] Add different city types:
+  - [ ] Resource producers
+  - [ ] Consumers
+  - [ ] Trading hubs
+- [ ] Implement city properties:
+  - [ ] Population
+  - [ ] Resource storage
+  - [ ] Production rates
+- [ ] Create resource flow system
+- [ ] Add city growth mechanics
+- [ ] Implement trade system
+
+### Phase 6: Graphics and Effects
+
+- [ ] Enhance city visuals:
+  - [ ] Size based on population
+  - [ ] Type indicators
+  - [ ] Status effects
+- [ ] Improve route visuals:
+  - [ ] Animated traffic flow
+  - [ ] Resource movement
+  - [ ] Capacity indicators
+- [ ] Add particle effects for:
+  - [ ] Resource transfer
+  - [ ] City growth
+  - [ ] Route establishment
+- [ ] Implement smooth animations
+- [ ] Add visual feedback for events
+
+### Phase 7: UI and Polish
+
+- [ ] Design and implement HUD:
+  - [ ] City information panel
+  - [ ] Route statistics
+  - [ ] Resource overview
+  - [ ] Network status
+- [ ] Add game menus
+- [ ] Create tutorial system
 - [ ] Implement sound effects
 - [ ] Add background music
-- [ ] Create tutorial system
 
-### Phase 6: Deployment and Testing
+### Phase 8: Deployment and Testing
 
 - [ ] Set up CI/CD pipeline
 - [ ] Implement automated testing
 - [ ] Optimize build size
 - [ ] Deploy to GCP
 - [ ] Performance testing and optimization
+
+## Game Modes
+
+### Edit Mode
+
+- Activated when a city is selected
+- Shows a route preview from selected city to cursor
+- Can be exited by:
+  - Clicking on the background
+  - Selecting the same city again
+  - Creating a new route
+- Used for:
+  - Creating routes between cities
+  - Modifying city properties
+  - Managing resource allocation
+
+### Play Mode (Planned)
+
+- Active gameplay state
+- Resource and trade simulation
+- City growth and development
+- Economic management
+- Network optimization
 
 ## Development Guidelines
 
