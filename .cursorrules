@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "name": "implementation_plan_consistency",
+      "description": "Ensure implementation plan is up to date with current development status",
+      "pattern": "IMPLEMENTATION_PLAN.md",
+      "check": {
+        "type": "content",
+        "conditions": [
+          {
+            "pattern": "^# Implementation Plan",
+            "message": "Implementation plan must start with proper heading"
+          },
+          {
+            "pattern": "## Implementation Phases",
+            "message": "Implementation phases section must be present"
+          },
+          {
+            "pattern": "\\[[ x]\\]",
+            "message": "Tasks must be properly formatted with checkboxes"
+          }
+        ]
+      }
+    }
+  ]
+} 
