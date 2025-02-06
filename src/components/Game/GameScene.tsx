@@ -1,5 +1,5 @@
 import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
-import { Circle } from './Circle';
+import { City } from './City';
 import { Line } from './Line';
 import { Plane } from './Plane';
 import { OrthographicCamera } from '@react-three/drei';
@@ -8,13 +8,25 @@ import { Vector3, Mesh, PlaneGeometry } from 'three';
 
 const SPACING = 2; // This will be about 20% of the screen with our camera setup
 const PLANE_SPEED = 1.0; // Doubled speed for faster movement
-const SPAWN_INTERVAL = 3000;
+const SPAWN_INTERVAL = 1000; // Spawn a new plane every second
 
-type Position = 'center' | 'top' | 'right' | 'bottom' | 'left';
+interface CityData {
+  id: string;
+  position: Vector3;
+  name: string;
+}
+
+const CITIES: CityData[] = [
+  { id: 'center', position: new Vector3(0, 0, 0), name: 'Central Hub' },
+  { id: 'north', position: new Vector3(0, SPACING, 0), name: 'North City' },
+  { id: 'east', position: new Vector3(SPACING, 0, 0), name: 'East City' },
+  { id: 'south', position: new Vector3(0, -SPACING, 0), name: 'South City' },
+  { id: 'west', position: new Vector3(-SPACING, 0, 0), name: 'West City' },
+];
 
 interface Route {
-  from: Position;
-  to: Position;
+  from: string;
+  to: string;
 }
 
 interface PlaneInstance {
@@ -23,22 +35,13 @@ interface PlaneInstance {
   isReturning: boolean;
 }
 
-const getCirclePosition = (position: Position): Vector3 => {
-  switch (position) {
-    case 'center':
-      return new Vector3(0, 0, 0);
-    case 'top':
-      return new Vector3(0, SPACING, 0);
-    case 'right':
-      return new Vector3(SPACING, 0, 0);
-    case 'bottom':
-      return new Vector3(0, -SPACING, 0);
-    case 'left':
-      return new Vector3(-SPACING, 0, 0);
-  }
+const getCityPosition = (cityId: string): Vector3 => {
+  const city = CITIES.find(c => c.id === cityId);
+  if (!city) throw new Error(`City ${cityId} not found`);
+  return city.position;
 };
 
-const routeExists = (routes: Route[], from: Position, to: Position): boolean => {
+const routeExists = (routes: Route[], from: string, to: string): boolean => {
   return routes.some(
     route =>
       (route.from === from && route.to === to) || 
@@ -47,7 +50,7 @@ const routeExists = (routes: Route[], from: Position, to: Position): boolean => 
 };
 
 const Scene = () => {
-  const [selectedCity, setSelectedCity] = useState<Position | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [planes, setPlanes] = useState<PlaneInstance[]>([]);
   const [nextPlaneId, setNextPlaneId] = useState(0);
@@ -89,17 +92,17 @@ const Scene = () => {
     });
   };
 
-  const handleSelect = (position: Position) => {
+  const handleSelect = (cityId: string) => {
     if (!selectedCity) {
       // First city selected - enter edit mode
-      setSelectedCity(position);
-    } else if (selectedCity === position) {
+      setSelectedCity(cityId);
+    } else if (selectedCity === cityId) {
       // Same city selected - exit edit mode
       setSelectedCity(null);
     } else {
       // Second city selected - create route if it doesn't exist
-      if (!routeExists(routes, selectedCity, position)) {
-        setRoutes(prev => [...prev, { from: selectedCity, to: position }]);
+      if (!routeExists(routes, selectedCity, cityId)) {
+        setRoutes(prev => [...prev, { from: selectedCity, to: cityId }]);
       }
       setSelectedCity(null);
     }
@@ -142,15 +145,15 @@ const Scene = () => {
       {routes.map((route, index) => (
         <Line
           key={`${route.from}-${route.to}-${index}`}
-          start={getCirclePosition(route.from)}
-          end={getCirclePosition(route.to)}
+          start={getCityPosition(route.from)}
+          end={getCityPosition(route.to)}
         />
       ))}
 
       {/* Render planes */}
       {planes.map((plane) => {
-        const start = getCirclePosition(plane.isReturning ? plane.route.to : plane.route.from);
-        const end = getCirclePosition(plane.isReturning ? plane.route.from : plane.route.to);
+        const start = getCityPosition(plane.isReturning ? plane.route.to : plane.route.from);
+        const end = getCityPosition(plane.isReturning ? plane.route.from : plane.route.to);
         return (
           <Plane
             key={`${plane.id}-${plane.isReturning}`}
@@ -165,41 +168,21 @@ const Scene = () => {
       {/* Render route preview in edit mode */}
       {selectedCity && (
         <Line 
-          start={getCirclePosition(selectedCity)} 
+          start={getCityPosition(selectedCity)} 
           end={cursorPosition}
         />
       )}
 
-      {/* Center city */}
-      <Circle 
-        position={[0, 0, 0]} 
-        isSelected={selectedCity === 'center'}
-        onSelect={() => handleSelect('center')}
-      />
-      {/* Top city */}
-      <Circle 
-        position={[0, SPACING, 0]} 
-        isSelected={selectedCity === 'top'}
-        onSelect={() => handleSelect('top')}
-      />
-      {/* Right city */}
-      <Circle 
-        position={[SPACING, 0, 0]} 
-        isSelected={selectedCity === 'right'}
-        onSelect={() => handleSelect('right')}
-      />
-      {/* Bottom city */}
-      <Circle 
-        position={[0, -SPACING, 0]} 
-        isSelected={selectedCity === 'bottom'}
-        onSelect={() => handleSelect('bottom')}
-      />
-      {/* Left city */}
-      <Circle 
-        position={[-SPACING, 0, 0]} 
-        isSelected={selectedCity === 'left'}
-        onSelect={() => handleSelect('left')}
-      />
+      {/* Render cities */}
+      {CITIES.map((city) => (
+        <City 
+          key={city.id}
+          position={[city.position.x, city.position.y, city.position.z]}
+          isSelected={selectedCity === city.id}
+          onSelect={() => handleSelect(city.id)}
+          name={city.name}
+        />
+      ))}
     </>
   );
 };

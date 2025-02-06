@@ -1,15 +1,23 @@
 import { useState } from 'react';
 import { ThreeEvent } from '@react-three/fiber';
 import { Mesh } from 'three';
+import { Text } from '@react-three/drei';
+import { animated, useSpring } from '@react-spring/three';
 
-interface CircleProps {
+interface CityProps {
   position?: [number, number, number];
   isSelected?: boolean;
   onSelect?: () => void;
+  name?: string;
 }
 
-export const Circle = ({ position = [0, 0, 0], isSelected = false, onSelect }: CircleProps) => {
+export const City = ({ position = [0, 0, 0], isSelected = false, onSelect, name }: CityProps) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  const { scale } = useSpring({
+    scale: isHovered ? 1.2 : 1,
+    config: { tension: 300, friction: 10 }
+  });
 
   const handlePointerOver = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
@@ -30,7 +38,8 @@ export const Circle = ({ position = [0, 0, 0], isSelected = false, onSelect }: C
 
   return (
     <group position={position}>
-      <mesh
+      <animated.mesh
+        scale={scale}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={handleClick}
@@ -39,10 +48,19 @@ export const Circle = ({ position = [0, 0, 0], isSelected = false, onSelect }: C
         <circleGeometry args={[0.2, 32]} />
         <meshBasicMaterial
           color={isSelected ? 'yellow' : 'white'}
-          transparent
-          opacity={isHovered ? 0.5 : 1}
         />
-      </mesh>
+      </animated.mesh>
+      {name && (
+        <Text
+          position={[0, -0.3, 0]}
+          fontSize={0.15}
+          color="white"
+          anchorX="center"
+          anchorY="top"
+        >
+          {name}
+        </Text>
+      )}
     </group>
   );
-};
+}; 
