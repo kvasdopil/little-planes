@@ -1,17 +1,26 @@
 import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
 import { Circle } from './Circle';
 import { Line } from './Line';
+import { Plane } from './Plane';
 import { OrthographicCamera } from '@react-three/drei';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Vector3, Mesh, PlaneGeometry } from 'three';
 
 const SPACING = 2; // This will be about 20% of the screen with our camera setup
+const PLANE_SPEED = 1.0; // Doubled speed for faster movement
+const SPAWN_INTERVAL = 3000;
 
 type Position = 'center' | 'top' | 'right' | 'bottom' | 'left';
 
 interface Route {
   from: Position;
   to: Position;
+}
+
+interface PlaneInstance {
+  id: number;
+  route: Route;
+  isReturning: boolean;
 }
 
 const getCirclePosition = (position: Position): Vector3 => {
@@ -40,8 +49,45 @@ const routeExists = (routes: Route[], from: Position, to: Position): boolean => 
 const Scene = () => {
   const [selectedCity, setSelectedCity] = useState<Position | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [planes, setPlanes] = useState<PlaneInstance[]>([]);
+  const [nextPlaneId, setNextPlaneId] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
   const { camera, size } = useThree();
+
+  // Spawn new planes periodically
+  useEffect(() => {
+    if (routes.length === 0) return;
+
+    const spawnPlane = () => {
+      const randomRoute = routes[Math.floor(Math.random() * routes.length)];
+      setPlanes(prev => [...prev, {
+        id: nextPlaneId,
+        route: randomRoute,
+        isReturning: false
+      }]);
+      setNextPlaneId(prev => prev + 1);
+    };
+
+    const interval = setInterval(spawnPlane, SPAWN_INTERVAL);
+    return () => clearInterval(interval);
+  }, [routes, nextPlaneId]);
+
+  const handlePlaneArrival = (planeId: number) => {
+    setPlanes(prev => {
+      const plane = prev.find(p => p.id === planeId);
+      if (!plane) return prev;
+
+      if (plane.isReturning) {
+        // Remove plane if it completed return journey
+        return prev.filter(p => p.id !== planeId);
+      }
+
+      // Create a new plane instance for the return journey
+      return prev.map(p => 
+        p.id === planeId ? { ...p, isReturning: true } : p
+      );
+    });
+  };
 
   const handleSelect = (position: Position) => {
     if (!selectedCity) {
@@ -100,6 +146,21 @@ const Scene = () => {
           end={getCirclePosition(route.to)}
         />
       ))}
+
+      {/* Render planes */}
+      {planes.map((plane) => {
+        const start = getCirclePosition(plane.isReturning ? plane.route.to : plane.route.from);
+        const end = getCirclePosition(plane.isReturning ? plane.route.from : plane.route.to);
+        return (
+          <Plane
+            key={`${plane.id}-${plane.isReturning}`}
+            start={start}
+            end={end}
+            speed={PLANE_SPEED}
+            onReachDestination={() => handlePlaneArrival(plane.id)}
+          />
+        );
+      })}
 
       {/* Render route preview in edit mode */}
       {selectedCity && (

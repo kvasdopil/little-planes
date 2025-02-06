@@ -51,7 +51,7 @@ planes-game/
 - [x] Implement Edit mode with route preview
 - [x] Add background click to exit Edit mode
 
-### Phase 3: Route Management ✅
+### Phase 3: Route Management and Movement ✅
 
 - [x] Implement basic route creation between cities
 - [x] Add route validation:
@@ -59,6 +59,11 @@ planes-game/
   - [x] Handle non-directional routes
 - [x] Implement route preview system
 - [x] Add route state management
+- [x] Implement plane movement system
+  - [x] Basic movement along routes
+  - [x] Return journey handling
+  - [x] Smooth transitions and rotations
+  - [x] Speed optimization
 
 ### Phase 4: Advanced Route Features
 
