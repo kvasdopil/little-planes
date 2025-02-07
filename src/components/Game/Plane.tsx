@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import { Vector3, BufferGeometry, Float32BufferAttribute } from 'three';
 import { useFrame } from '@react-three/fiber';
+import { AirplaneModel } from '../../types/city';
 
 interface PlaneProps {
   start: Vector3;
   end: Vector3;
   speed?: number;
   onReachDestination?: () => void;
+  model: AirplaneModel;
 }
 
 // Create triangle geometry
@@ -24,13 +26,16 @@ const vertices = new Float32Array([
 ]);
 triangleGeometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
 
-export const Plane = ({ start, end, speed = 1, onReachDestination }: PlaneProps) => {
+export const Plane = ({ start, end, speed = 1, onReachDestination, model }: PlaneProps) => {
   const [position, setPosition] = useState(() => start.clone());
   const progressRef = useRef(0);
   const hasReachedEndRef = useRef(false);
   const direction = end.clone().sub(start).normalize();
   const totalDistance = end.clone().sub(start).length();
-  
+
+  // Adjust color based on model
+  const color = model === 'Bingo Buzzer' ? 'yellow' : 'orange';
+
   useFrame((_, delta) => {
     if (hasReachedEndRef.current) return;
 
@@ -53,7 +58,7 @@ export const Plane = ({ start, end, speed = 1, onReachDestination }: PlaneProps)
 
   return (
     <mesh position={position} rotation={[0, 0, angle]} geometry={triangleGeometry}>
-      <meshBasicMaterial color="yellow" />
+      <meshBasicMaterial color={color} />
     </mesh>
   );
 };

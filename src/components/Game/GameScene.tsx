@@ -17,12 +17,14 @@ const VIEWPORT_MARGIN = 0.8; // 80% of viewport
 interface Route {
   from: CityId;
   to: CityId;
+  assignedAirplaneId: string;
 }
 
 interface PlaneInstance {
   id: number;
   route: Route;
   isReturning: boolean;
+  airplaneId: string;
 }
 
 interface PendingRoute {
@@ -130,6 +132,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
           id: nextPlaneId,
           route: randomRoute,
           isReturning: false,
+          airplaneId: randomRoute.assignedAirplaneId,
         },
       ]);
       setNextPlaneId((prev) => prev + 1);
@@ -210,9 +213,19 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
     }
   };
 
-  const handleRouteConfirm = () => {
+  const handleRouteConfirm = (selectedAirplaneId: string) => {
     if (pendingRoute) {
-      setRoutes((prev) => [...prev, { from: pendingRoute.from, to: pendingRoute.to }]);
+      // Update the airplane's assigned status
+      const fromCity = CITIES.find((c) => c.id === pendingRoute.from)!;
+      const airplane = fromCity.availableAirplanes.find((a) => a.id === selectedAirplaneId)!;
+      airplane.isAssigned = true;
+
+      // Create the route with the assigned airplane
+      setRoutes((prev) => [
+        ...prev,
+        { from: pendingRoute.from, to: pendingRoute.to, assignedAirplaneId: selectedAirplaneId },
+      ]);
+
       setPendingRoute(null);
       setSelectedCity(null);
       setDragTargetCity(null);
@@ -233,8 +246,9 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
   };
 
   const handleBackgroundClick = (event: ThreeEvent<MouseEvent>) => {
-    const mesh = event.object as Mesh;
-    if (mesh.geometry instanceof PlaneGeometry) {
+    // Only handle clicks on the background plane
+    const clickedObject = event.object;
+    if (clickedObject instanceof Mesh && clickedObject.geometry instanceof PlaneGeometry) {
       setSelectedCity(null);
       setPendingRoute(null);
       setCityInfo(null);
@@ -297,6 +311,9 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
           toCity={CITIES.find((c) => c.id === pendingRoute.to)!.name}
           onConfirm={handleRouteConfirm}
           onCancel={handleRouteCancel}
+          availableAirplanes={CITIES.find(
+            (c) => c.id === pendingRoute.from
+          )!.availableAirplanes.filter((a) => !a.isAssigned)}
         />
       )}
 
@@ -306,6 +323,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
           position={cityInfo.position}
           cityName={CITIES.find((c) => c.id === cityInfo.id)!.name}
           onClose={handleCityInfoClose}
+          availableAirplanes={CITIES.find((c) => c.id === cityInfo.id)!.availableAirplanes}
         />
       )}
 
@@ -330,6 +348,12 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
       {planes.map((plane) => {
         const start = getCityPosition(plane.isReturning ? plane.route.to : plane.route.from);
         const end = getCityPosition(plane.isReturning ? plane.route.from : plane.route.to);
+        const route = routes.find((r) => r.from === plane.route.from && r.to === plane.route.to)!;
+        const fromCity = CITIES.find((c) => c.id === route.from)!;
+        const airplane = fromCity.availableAirplanes.find(
+          (a) => a.id === route.assignedAirplaneId
+        )!;
+
         return (
           <Plane
             key={`${plane.id}-${plane.isReturning}`}
@@ -337,6 +361,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
             end={end}
             speed={PLANE_SPEED}
             onReachDestination={() => handlePlaneArrival(plane.id)}
+            model={airplane.model}
           />
         );
       })}

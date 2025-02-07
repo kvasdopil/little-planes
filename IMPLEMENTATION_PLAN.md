@@ -63,7 +63,7 @@ planes-game/
   - [x] Basic movement along routes
   - [x] Return journey handling
   - [x] Smooth transitions and rotations
-  - [x] Speed optimization
+  - [x] Consistent speed across routes
 
 ### Phase 4: Map and Navigation ✅
 
@@ -80,24 +80,51 @@ planes-game/
   - [x] Add city names
   - [x] Add hover animations
   - [x] Optimize city spacing
+  - [x] Different sizes for major/minor cities
 
-### Phase 5: Advanced Route Features 🚧
+### Phase 5: Airplane System ✅
 
-- [x] Add route validation rules:
-  - [x] Maximum route length
-  - [x] Intersection prevention
-  - [x] Resource requirements
+- [x] Add airplane models:
+  - [x] Bingo Buzzer
+  - [x] Fatso Fantastic
+- [x] Implement airplane management:
+  - [x] City-specific airplane availability
+  - [x] Airplane assignment to routes
+  - [x] Visual distinction between models
+  - [x] Automatic model selection in UI
+- [x] Add airplane UI:
+  - [x] Model selection in route creation
+  - [x] Available airplane counts
+  - [x] City-specific airplane inventory
+
+### Phase 6: UI and Interaction Polish ✅
+
+- [x] Enhance route creation:
+  - [x] Add confirmation dialog
+  - [x] Show route preview while dragging
+  - [x] Validate route creation conditions
+- [x] Improve city interaction:
+  - [x] Add city info panel
+  - [x] Show available airplanes
+  - [x] Add drag and drop for route creation
+- [x] Polish dialog system:
+  - [x] Consistent white background style
+  - [x] Close buttons
+  - [x] Proper event handling
+  - [x] Clear airplane model selection
+
+### Phase 7: Advanced Route Features 🚧
+
 - [ ] Implement route deletion
 - [ ] Add route properties:
   - [ ] Transport capacity
   - [ ] Maintenance cost
   - [ ] Travel time
 - [ ] Add route visualization:
-  - [x] Direction indicators
   - [ ] Traffic flow
   - [ ] Capacity indicators
 
-### Phase 6: City Features
+### Phase 8: City Features
 
 - [ ] Add different city types:
   - [ ] Resource producers
@@ -111,7 +138,7 @@ planes-game/
 - [ ] Add city growth mechanics
 - [ ] Implement trade system
 
-### Phase 7: Graphics and Effects
+### Phase 9: Graphics and Effects
 
 - [ ] Enhance city visuals:
   - [ ] Size based on population
@@ -128,19 +155,7 @@ planes-game/
 - [ ] Implement smooth animations
 - [ ] Add visual feedback for events
 
-### Phase 8: UI and Polish
-
-- [x] Design and implement HUD:
-  - [x] City information panel
-  - [x] Route statistics
-  - [ ] Resource overview
-  - [ ] Network status
-- [ ] Add game menus
-- [ ] Create tutorial system
-- [ ] Implement sound effects
-- [ ] Add background music
-
-### Phase 9: Deployment and Testing
+### Phase 10: Deployment and Testing
 
 - [ ] Set up CI/CD pipeline
 - [ ] Implement automated testing

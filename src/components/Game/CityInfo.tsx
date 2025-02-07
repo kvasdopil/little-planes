@@ -1,18 +1,22 @@
 import { Html } from '@react-three/drei';
 import { Vector3 } from 'three';
+import { AvailableAirplane } from '../../types/city';
 
 interface CityInfoProps {
   position: Vector3;
-  onClose: () => void;
   cityName: string;
+  onClose: () => void;
+  availableAirplanes: AvailableAirplane[];
 }
 
-export const CityInfo = ({ position, onClose, cityName }: CityInfoProps) => {
-  const handleBackgroundClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
+export const CityInfo = ({ position, cityName, onClose, availableAirplanes }: CityInfoProps) => {
+  // Count available airplanes by model
+  const airplaneCounts = availableAirplanes.reduce<Record<string, number>>((acc, airplane) => {
+    if (!airplane.isAssigned) {
+      acc[airplane.model] = (acc[airplane.model] || 0) + 1;
     }
-  };
+    return acc;
+  }, {});
 
   return (
     <Html position={position} center style={{ pointerEvents: 'none' }}>
@@ -23,12 +27,12 @@ export const CityInfo = ({ position, onClose, cityName }: CityInfoProps) => {
           padding: '20px',
           borderRadius: '8px',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          width: '200px',
           color: '#333',
-          fontFamily: 'Arial, sans-serif',
+          width: '200px',
+          textAlign: 'center',
           position: 'relative',
         }}
-        onClick={handleBackgroundClick}
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
@@ -54,33 +58,21 @@ export const CityInfo = ({ position, onClose, cityName }: CityInfoProps) => {
           ×
         </button>
 
-        <div style={{ marginBottom: '15px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', color: '#333' }}>{cityName}</h3>
+        <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>{cityName}</h3>
+        <div style={{ marginBottom: '20px' }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Available Airplanes</h4>
+          {Object.entries(airplaneCounts).length > 0 ? (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '14px' }}>
+              {Object.entries(airplaneCounts).map(([model, count]) => (
+                <li key={model} style={{ marginBottom: '8px' }}>
+                  {model}: {count} available
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ color: 'red', fontSize: '14px' }}>No available airplanes</p>
+          )}
         </div>
-
-        <div style={{ marginBottom: '20px', fontSize: '14px' }}>
-          <div style={{ marginBottom: '8px' }}>Population: 1.2M</div>
-          <div style={{ marginBottom: '8px' }}>Active Routes: 3</div>
-          <div>Planes in transit: 2</div>
-        </div>
-
-        <button
-          style={{
-            width: '100%',
-            padding: '8px',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            transition: 'background-color 0.2s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1976D2')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2196F3')}
-        >
-          View Details
-        </button>
       </div>
     </Html>
   );
