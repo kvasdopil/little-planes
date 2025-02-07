@@ -21,6 +21,26 @@
           }
         ]
       }
+    },
+    {
+      "name": "pre_commit_lint",
+      "description": "Run ESLint before creating a commit",
+      "pattern": "git commit",
+      "check": {
+        "type": "command",
+        "command": "npm run lint",
+        "message": "Please fix linting errors before committing"
+      }
+    },
+    {
+      "name": "pre_commit_format",
+      "description": "Run Prettier formatter before creating a commit",
+      "pattern": "git commit",
+      "check": {
+        "type": "command",
+        "command": "npm run format",
+        "message": "Please format code before committing"
+      }
     }
   ]
 } 
