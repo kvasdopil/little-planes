@@ -66,7 +66,36 @@ const calculateInitialZoom = () => {
 
 const INITIAL_ZOOM = calculateInitialZoom();
 
-const Scene = () => {
+export const GameScene = () => {
+  const [isCreatingRoute, setIsCreatingRoute] = useState(false);
+
+  return (
+    <div style={{ width: '100%', height: '100%' }}>
+      <Canvas>
+        <OrthographicCamera makeDefault position={[0, 0, 5]} zoom={INITIAL_ZOOM} />
+        <MapControls 
+          enableRotate={false} 
+          enablePan={!isCreatingRoute} 
+          enableZoom={!isCreatingRoute} 
+          screenSpacePanning={true} 
+          panSpeed={1.0} 
+          zoomSpeed={0.3}
+          minZoom={INITIAL_ZOOM * 0.2}
+          maxZoom={INITIAL_ZOOM * 3}
+          dampingFactor={0.1}
+        />
+        <Scene onRouteCreateStart={() => setIsCreatingRoute(true)} onRouteCreateEnd={() => setIsCreatingRoute(false)} />
+      </Canvas>
+    </div>
+  );
+};
+
+interface SceneProps {
+  onRouteCreateStart: () => void;
+  onRouteCreateEnd: () => void;
+}
+
+const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
   const { camera, size } = useThree();
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -75,6 +104,7 @@ const Scene = () => {
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
   const [pendingRoute, setPendingRoute] = useState<PendingRoute | null>(null);
   const [cityInfo, setCityInfo] = useState<SelectedCityInfo | null>(null);
+  const [dragTargetCity, setDragTargetCity] = useState<CityId | null>(null);
 
   // Set initial camera position and zoom
   useEffect(() => {
@@ -123,32 +153,53 @@ const Scene = () => {
   };
 
   const handleSelect = (cityId: CityId) => {
-    if (!selectedCity) {
-      // First city selected - show city info if not creating a route
+    // Only show city info if not creating a route
+    if (!selectedCity || selectedCity === cityId) {
       const city = CITIES.find(c => c.id === cityId)!;
       setCityInfo({
         id: cityId,
         position: city.position.clone()
       });
-      setSelectedCity(cityId);
-    } else if (selectedCity === cityId) {
-      // Same city selected - exit edit mode
       setSelectedCity(null);
-      setCityInfo(null);
+    }
+  };
+
+  const handleDragOver = (cityId: CityId) => {
+    if (selectedCity && selectedCity !== cityId && !routeExists(routes, selectedCity, cityId)) {
+      setDragTargetCity(cityId);
+    }
+  };
+
+  const handleDragStart = (cityId: CityId) => {
+    setSelectedCity(cityId);
+    setCityInfo(null);
+    setPendingRoute(null);
+    setDragTargetCity(null);
+    onRouteCreateStart();
+  };
+
+  const handleDragEnd = () => {
+    if (selectedCity && dragTargetCity && selectedCity !== dragTargetCity && !routeExists(routes, selectedCity, dragTargetCity)) {
+      const fromCity = CITIES.find(c => c.id === selectedCity)!;
+      const toCity = CITIES.find(c => c.id === dragTargetCity)!;
+      const midPoint = fromCity.position.clone().add(toCity.position).multiplyScalar(0.5);
+      
+      const newPendingRoute = {
+        from: selectedCity,
+        to: dragTargetCity,
+        position: midPoint
+      };
+      
+      setTimeout(() => {
+        setPendingRoute(newPendingRoute);
+      }, 0);
+      
+      setDragTargetCity(null);
     } else {
-      // Second city selected - show confirmation if route doesn't exist
-      if (!routeExists(routes, selectedCity, cityId)) {
-        const fromCity = CITIES.find(c => c.id === selectedCity)!;
-        const toCity = CITIES.find(c => c.id === cityId)!;
-        const midPoint = fromCity.position.clone().add(toCity.position).multiplyScalar(0.5);
-        setPendingRoute({
-          from: selectedCity,
-          to: cityId,
-          position: midPoint
-        });
-      }
+      setPendingRoute(null);
       setSelectedCity(null);
-      setCityInfo(null);
+      setDragTargetCity(null);
+      onRouteCreateEnd();
     }
   };
 
@@ -156,11 +207,17 @@ const Scene = () => {
     if (pendingRoute) {
       setRoutes(prev => [...prev, { from: pendingRoute.from, to: pendingRoute.to }]);
       setPendingRoute(null);
+      setSelectedCity(null);
+      setDragTargetCity(null);
+      onRouteCreateEnd();
     }
   };
 
   const handleRouteCancel = () => {
     setPendingRoute(null);
+    setSelectedCity(null);
+    setDragTargetCity(null);
+    onRouteCreateEnd();
   };
 
   const handleCityInfoClose = () => {
@@ -228,8 +285,9 @@ const Scene = () => {
       )}
 
       {/* Render route confirmation popup */}
-      {pendingRoute && (
+      {pendingRoute && pendingRoute.position && (
         <RouteConfirmation
+          key={`${pendingRoute.from}-${pendingRoute.to}`}
           position={pendingRoute.position}
           fromCity={CITIES.find(c => c.id === pendingRoute.from)!.name}
           toCity={CITIES.find(c => c.id === pendingRoute.to)!.name}
@@ -257,6 +315,10 @@ const Scene = () => {
           onSelect={() => handleSelect(city.id)}
           name={city.name}
           size={city.size}
+          onDragStart={(cityId) => handleDragStart(cityId)}
+          onDragOver={(cityId) => handleDragOver(cityId)}
+          onDragEnd={handleDragEnd}
+          isDraggingActive={selectedCity !== null}
         />
       ))}
 
@@ -275,27 +337,5 @@ const Scene = () => {
         );
       })}
     </>
-  );
-};
-
-export const GameScene = () => {
-  return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <Canvas>
-        <OrthographicCamera makeDefault position={[0, 0, 5]} zoom={INITIAL_ZOOM} />
-        <MapControls 
-          enableRotate={false} 
-          enablePan={true} 
-          enableZoom={true} 
-          screenSpacePanning={true} 
-          panSpeed={1.0} 
-          zoomSpeed={0.3}
-          minZoom={INITIAL_ZOOM * 0.2}
-          maxZoom={INITIAL_ZOOM * 3}
-          dampingFactor={0.1}
-        />
-        <Scene />
-      </Canvas>
-    </div>
   );
 };

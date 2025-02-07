@@ -16,6 +16,14 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
     }
   };
 
+  const handleConfirm = () => {
+    onConfirm();
+  };
+
+  const handleCancel = () => {
+    onCancel();
+  };
+
   return (
     <Html position={position} center style={{ pointerEvents: 'none' }}>
       <div 
@@ -33,7 +41,7 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
         onClick={handleBackgroundClick}
       >
         <button
-          onClick={onCancel}
+          onClick={handleCancel}
           style={{
             position: 'absolute',
             top: '-12px',
@@ -56,9 +64,7 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
           ×
         </button>
 
-        <div style={{ 
-          marginBottom: '15px'
-        }}>
+        <div style={{ marginBottom: '15px' }}>
           <h3 style={{ margin: 0, fontSize: '16px', color: '#333' }}>New Route</h3>
         </div>
 
@@ -68,7 +74,7 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
         </div>
 
         <button
-          onClick={onConfirm}
+          onClick={handleConfirm}
           style={{
             width: '100%',
             padding: '8px',
