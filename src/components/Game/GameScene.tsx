@@ -10,7 +10,7 @@ import { CITIES, getCityPosition } from '../../constants/cities';
 import { RouteConfirmation } from './RouteConfirmation';
 import { CityInfo } from './CityInfo';
 
-const PLANE_SPEED = 1.0; // Doubled speed for faster movement
+const PLANE_SPEED = 2.0; // Units per second
 const SPAWN_INTERVAL = 1000; // Spawn a new plane every second
 const VIEWPORT_MARGIN = 0.8; // 80% of viewport
 

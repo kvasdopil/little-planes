@@ -29,11 +29,14 @@ export const Plane = ({ start, end, speed = 1, onReachDestination }: PlaneProps)
   const progressRef = useRef(0);
   const hasReachedEndRef = useRef(false);
   const direction = end.clone().sub(start).normalize();
-
+  const totalDistance = end.clone().sub(start).length();
+  
   useFrame((_, delta) => {
     if (hasReachedEndRef.current) return;
 
-    progressRef.current += speed * delta;
+    // Calculate distance to move this frame based on speed and delta time
+    const distanceThisFrame = speed * delta;
+    progressRef.current += distanceThisFrame / totalDistance;
 
     if (progressRef.current >= 1) {
       progressRef.current = 1;
