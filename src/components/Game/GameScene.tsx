@@ -7,6 +7,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Vector3, Mesh, PlaneGeometry, Box3 } from 'three';
 import { CityId } from '../../types/city';
 import { CITIES, getCityPosition } from '../../constants/cities';
+import { RouteConfirmation } from './RouteConfirmation';
 
 const PLANE_SPEED = 1.0; // Doubled speed for faster movement
 const SPAWN_INTERVAL = 1000; // Spawn a new plane every second
@@ -21,6 +22,12 @@ interface PlaneInstance {
   id: number;
   route: Route;
   isReturning: boolean;
+}
+
+interface PendingRoute {
+  from: CityId;
+  to: CityId;
+  position: Vector3;
 }
 
 const routeExists = (routes: Route[], from: CityId, to: CityId): boolean => {
@@ -60,6 +67,7 @@ const Scene = () => {
   const [planes, setPlanes] = useState<PlaneInstance[]>([]);
   const [nextPlaneId, setNextPlaneId] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
+  const [pendingRoute, setPendingRoute] = useState<PendingRoute | null>(null);
 
   // Set initial camera position and zoom
   useEffect(() => {
@@ -115,18 +123,37 @@ const Scene = () => {
       // Same city selected - exit edit mode
       setSelectedCity(null);
     } else {
-      // Second city selected - create route if it doesn't exist
+      // Second city selected - show confirmation if route doesn't exist
       if (!routeExists(routes, selectedCity, cityId)) {
-        setRoutes(prev => [...prev, { from: selectedCity, to: cityId }]);
+        const fromCity = CITIES.find(c => c.id === selectedCity)!;
+        const toCity = CITIES.find(c => c.id === cityId)!;
+        const midPoint = fromCity.position.clone().add(toCity.position).multiplyScalar(0.5);
+        setPendingRoute({
+          from: selectedCity,
+          to: cityId,
+          position: midPoint
+        });
       }
       setSelectedCity(null);
     }
+  };
+
+  const handleRouteConfirm = () => {
+    if (pendingRoute) {
+      setRoutes(prev => [...prev, { from: pendingRoute.from, to: pendingRoute.to }]);
+      setPendingRoute(null);
+    }
+  };
+
+  const handleRouteCancel = () => {
+    setPendingRoute(null);
   };
 
   const handleBackgroundClick = (event: ThreeEvent<MouseEvent>) => {
     const mesh = event.object as Mesh;
     if (mesh.geometry instanceof PlaneGeometry) {
       setSelectedCity(null);
+      setPendingRoute(null);
     }
   };
 
@@ -164,26 +191,30 @@ const Scene = () => {
         />
       ))}
 
-      {/* Render planes */}
-      {planes.map((plane) => {
-        const start = getCityPosition(plane.isReturning ? plane.route.to : plane.route.from);
-        const end = getCityPosition(plane.isReturning ? plane.route.from : plane.route.to);
-        return (
-          <Plane
-            key={`${plane.id}-${plane.isReturning}`}
-            start={start}
-            end={end}
-            speed={PLANE_SPEED}
-            onReachDestination={() => handlePlaneArrival(plane.id)}
-          />
-        );
-      })}
+      {/* Render route preview */}
+      {pendingRoute && (
+        <Line
+          start={getCityPosition(pendingRoute.from)}
+          end={getCityPosition(pendingRoute.to)}
+        />
+      )}
 
       {/* Render route preview in edit mode */}
-      {selectedCity && (
+      {selectedCity && !pendingRoute && (
         <Line 
           start={getCityPosition(selectedCity)} 
           end={cursorPosition}
+        />
+      )}
+
+      {/* Render route confirmation popup */}
+      {pendingRoute && (
+        <RouteConfirmation
+          position={pendingRoute.position}
+          fromCity={CITIES.find(c => c.id === pendingRoute.from)!.name}
+          toCity={CITIES.find(c => c.id === pendingRoute.to)!.name}
+          onConfirm={handleRouteConfirm}
+          onCancel={handleRouteCancel}
         />
       )}
 
@@ -199,6 +230,21 @@ const Scene = () => {
           size={city.size}
         />
       ))}
+
+      {/* Render planes */}
+      {planes.map((plane) => {
+        const start = getCityPosition(plane.isReturning ? plane.route.to : plane.route.from);
+        const end = getCityPosition(plane.isReturning ? plane.route.from : plane.route.to);
+        return (
+          <Plane
+            key={`${plane.id}-${plane.isReturning}`}
+            start={start}
+            end={end}
+            speed={PLANE_SPEED}
+            onReachDestination={() => handlePlaneArrival(plane.id)}
+          />
+        );
+      })}
     </>
   );
 };
