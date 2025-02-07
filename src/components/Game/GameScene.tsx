@@ -2,31 +2,19 @@ import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
 import { City } from './City';
 import { Line } from './Line';
 import { Plane } from './Plane';
-import { OrthographicCamera } from '@react-three/drei';
+import { OrthographicCamera, MapControls } from '@react-three/drei';
 import { useState, useCallback, useEffect } from 'react';
-import { Vector3, Mesh, PlaneGeometry } from 'three';
+import { Vector3, Mesh, PlaneGeometry, Box3 } from 'three';
+import { CityId } from '../../types/city';
+import { CITIES, getCityPosition } from '../../constants/cities';
 
-const SPACING = 2; // This will be about 20% of the screen with our camera setup
 const PLANE_SPEED = 1.0; // Doubled speed for faster movement
 const SPAWN_INTERVAL = 1000; // Spawn a new plane every second
-
-interface CityData {
-  id: string;
-  position: Vector3;
-  name: string;
-}
-
-const CITIES: CityData[] = [
-  { id: 'center', position: new Vector3(0, 0, 0), name: 'Central Hub' },
-  { id: 'north', position: new Vector3(0, SPACING, 0), name: 'North City' },
-  { id: 'east', position: new Vector3(SPACING, 0, 0), name: 'East City' },
-  { id: 'south', position: new Vector3(0, -SPACING, 0), name: 'South City' },
-  { id: 'west', position: new Vector3(-SPACING, 0, 0), name: 'West City' },
-];
+const VIEWPORT_MARGIN = 0.8; // 80% of viewport
 
 interface Route {
-  from: string;
-  to: string;
+  from: CityId;
+  to: CityId;
 }
 
 interface PlaneInstance {
@@ -35,13 +23,7 @@ interface PlaneInstance {
   isReturning: boolean;
 }
 
-const getCityPosition = (cityId: string): Vector3 => {
-  const city = CITIES.find(c => c.id === cityId);
-  if (!city) throw new Error(`City ${cityId} not found`);
-  return city.position;
-};
-
-const routeExists = (routes: Route[], from: string, to: string): boolean => {
+const routeExists = (routes: Route[], from: CityId, to: CityId): boolean => {
   return routes.some(
     route =>
       (route.from === from && route.to === to) || 
@@ -49,13 +31,46 @@ const routeExists = (routes: Route[], from: string, to: string): boolean => {
   );
 };
 
+// Calculate bounds of all cities
+const calculateCitiesBounds = () => {
+  const box = new Box3();
+  CITIES.forEach(city => {
+    box.expandByPoint(city.position);
+  });
+  return box;
+};
+
+// Add initial zoom calculation as a constant at the top
+const calculateInitialZoom = () => {
+  const bounds = calculateCitiesBounds();
+  const size = new Vector3();
+  bounds.getSize(size);
+  return Math.min(
+    (window.innerWidth * VIEWPORT_MARGIN) / size.x,
+    (window.innerHeight * VIEWPORT_MARGIN) / size.y
+  );
+};
+
+const INITIAL_ZOOM = calculateInitialZoom();
+
 const Scene = () => {
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const { camera, size } = useThree();
+  const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [planes, setPlanes] = useState<PlaneInstance[]>([]);
   const [nextPlaneId, setNextPlaneId] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
-  const { camera, size } = useThree();
+
+  // Set initial camera position and zoom
+  useEffect(() => {
+    const bounds = calculateCitiesBounds();
+    const center = new Vector3();
+    bounds.getCenter(center);
+    
+    camera.position.set(center.x, center.y, 5);
+    camera.zoom = INITIAL_ZOOM;
+    camera.updateProjectionMatrix();
+  }, [camera]);
 
   // Spawn new planes periodically
   useEffect(() => {
@@ -92,7 +107,7 @@ const Scene = () => {
     });
   };
 
-  const handleSelect = (cityId: string) => {
+  const handleSelect = (cityId: CityId) => {
     if (!selectedCity) {
       // First city selected - enter edit mode
       setSelectedCity(cityId);
@@ -132,7 +147,6 @@ const Scene = () => {
 
   return (
     <>
-      <OrthographicCamera makeDefault position={[0, 0, 5]} zoom={100} />
       <color attach="background" args={['black']} />
 
       {/* Invisible plane for background clicks */}
@@ -177,6 +191,7 @@ const Scene = () => {
       {CITIES.map((city) => (
         <City 
           key={city.id}
+          id={city.id}
           position={[city.position.x, city.position.y, city.position.z]}
           isSelected={selectedCity === city.id}
           onSelect={() => handleSelect(city.id)}
@@ -191,6 +206,18 @@ export const GameScene = () => {
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <Canvas>
+        <OrthographicCamera makeDefault position={[0, 0, 5]} zoom={INITIAL_ZOOM} />
+        <MapControls 
+          enableRotate={false} 
+          enablePan={true} 
+          enableZoom={true} 
+          screenSpacePanning={true} 
+          panSpeed={1.0} 
+          zoomSpeed={0.3}
+          minZoom={INITIAL_ZOOM * 0.2}
+          maxZoom={INITIAL_ZOOM * 3}
+          dampingFactor={0.1}
+        />
         <Scene />
       </Canvas>
     </div>
