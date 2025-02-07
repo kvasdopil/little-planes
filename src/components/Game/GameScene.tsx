@@ -8,6 +8,7 @@ import { Vector3, Mesh, PlaneGeometry, Box3 } from 'three';
 import { CityId } from '../../types/city';
 import { CITIES, getCityPosition } from '../../constants/cities';
 import { RouteConfirmation } from './RouteConfirmation';
+import { CityInfo } from './CityInfo';
 
 const PLANE_SPEED = 1.0; // Doubled speed for faster movement
 const SPAWN_INTERVAL = 1000; // Spawn a new plane every second
@@ -27,6 +28,11 @@ interface PlaneInstance {
 interface PendingRoute {
   from: CityId;
   to: CityId;
+  position: Vector3;
+}
+
+interface SelectedCityInfo {
+  id: CityId;
   position: Vector3;
 }
 
@@ -68,6 +74,7 @@ const Scene = () => {
   const [nextPlaneId, setNextPlaneId] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
   const [pendingRoute, setPendingRoute] = useState<PendingRoute | null>(null);
+  const [cityInfo, setCityInfo] = useState<SelectedCityInfo | null>(null);
 
   // Set initial camera position and zoom
   useEffect(() => {
@@ -117,11 +124,17 @@ const Scene = () => {
 
   const handleSelect = (cityId: CityId) => {
     if (!selectedCity) {
-      // First city selected - enter edit mode
+      // First city selected - show city info if not creating a route
+      const city = CITIES.find(c => c.id === cityId)!;
+      setCityInfo({
+        id: cityId,
+        position: city.position.clone()
+      });
       setSelectedCity(cityId);
     } else if (selectedCity === cityId) {
       // Same city selected - exit edit mode
       setSelectedCity(null);
+      setCityInfo(null);
     } else {
       // Second city selected - show confirmation if route doesn't exist
       if (!routeExists(routes, selectedCity, cityId)) {
@@ -135,6 +148,7 @@ const Scene = () => {
         });
       }
       setSelectedCity(null);
+      setCityInfo(null);
     }
   };
 
@@ -149,11 +163,17 @@ const Scene = () => {
     setPendingRoute(null);
   };
 
+  const handleCityInfoClose = () => {
+    setCityInfo(null);
+    setSelectedCity(null);
+  };
+
   const handleBackgroundClick = (event: ThreeEvent<MouseEvent>) => {
     const mesh = event.object as Mesh;
     if (mesh.geometry instanceof PlaneGeometry) {
       setSelectedCity(null);
       setPendingRoute(null);
+      setCityInfo(null);
     }
   };
 
@@ -215,6 +235,15 @@ const Scene = () => {
           toCity={CITIES.find(c => c.id === pendingRoute.to)!.name}
           onConfirm={handleRouteConfirm}
           onCancel={handleRouteCancel}
+        />
+      )}
+
+      {/* Render city info popup */}
+      {cityInfo && !pendingRoute && (
+        <CityInfo
+          position={cityInfo.position}
+          cityName={CITIES.find(c => c.id === cityInfo.id)!.name}
+          onClose={handleCityInfoClose}
         />
       )}
 
