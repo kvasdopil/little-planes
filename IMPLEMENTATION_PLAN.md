@@ -81,19 +81,19 @@ planes-game/
   - [x] Add hover animations
   - [x] Optimize city spacing
 
-### Phase 5: Advanced Route Features
+### Phase 5: Advanced Route Features 🚧
 
-- [ ] Add route validation rules:
-  - [ ] Maximum route length
-  - [ ] Intersection prevention
-  - [ ] Resource requirements
+- [x] Add route validation rules:
+  - [x] Maximum route length
+  - [x] Intersection prevention
+  - [x] Resource requirements
 - [ ] Implement route deletion
 - [ ] Add route properties:
   - [ ] Transport capacity
   - [ ] Maintenance cost
   - [ ] Travel time
 - [ ] Add route visualization:
-  - [ ] Direction indicators
+  - [x] Direction indicators
   - [ ] Traffic flow
   - [ ] Capacity indicators
 
@@ -130,9 +130,9 @@ planes-game/
 
 ### Phase 8: UI and Polish
 
-- [ ] Design and implement HUD:
-  - [ ] City information panel
-  - [ ] Route statistics
+- [x] Design and implement HUD:
+  - [x] City information panel
+  - [x] Route statistics
   - [ ] Resource overview
   - [ ] Network status
 - [ ] Add game menus
@@ -150,7 +150,7 @@ planes-game/
 
 ## Game Modes
 
-### Edit Mode
+### Edit Mode ✅
 
 - Activated when a city is selected
 - Shows a route preview from selected city to cursor

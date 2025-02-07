@@ -38,16 +38,14 @@ interface SelectedCityInfo {
 
 const routeExists = (routes: Route[], from: CityId, to: CityId): boolean => {
   return routes.some(
-    route =>
-      (route.from === from && route.to === to) || 
-      (route.from === to && route.to === from)
+    (route) => (route.from === from && route.to === to) || (route.from === to && route.to === from)
   );
 };
 
 // Calculate bounds of all cities
 const calculateCitiesBounds = () => {
   const box = new Box3();
-  CITIES.forEach(city => {
+  CITIES.forEach((city) => {
     box.expandByPoint(city.position);
   });
   return box;
@@ -73,18 +71,21 @@ export const GameScene = () => {
     <div style={{ width: '100%', height: '100%' }}>
       <Canvas>
         <OrthographicCamera makeDefault position={[0, 0, 5]} zoom={INITIAL_ZOOM} />
-        <MapControls 
-          enableRotate={false} 
-          enablePan={!isCreatingRoute} 
-          enableZoom={!isCreatingRoute} 
-          screenSpacePanning={true} 
-          panSpeed={1.0} 
+        <MapControls
+          enableRotate={false}
+          enablePan={!isCreatingRoute}
+          enableZoom={!isCreatingRoute}
+          screenSpacePanning={true}
+          panSpeed={1.0}
           zoomSpeed={0.3}
           minZoom={INITIAL_ZOOM * 0.2}
           maxZoom={INITIAL_ZOOM * 3}
           dampingFactor={0.1}
         />
-        <Scene onRouteCreateStart={() => setIsCreatingRoute(true)} onRouteCreateEnd={() => setIsCreatingRoute(false)} />
+        <Scene
+          onRouteCreateStart={() => setIsCreatingRoute(true)}
+          onRouteCreateEnd={() => setIsCreatingRoute(false)}
+        />
       </Canvas>
     </div>
   );
@@ -111,7 +112,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
     const bounds = calculateCitiesBounds();
     const center = new Vector3();
     bounds.getCenter(center);
-    
+
     camera.position.set(center.x, center.y, 5);
     camera.zoom = INITIAL_ZOOM;
     camera.updateProjectionMatrix();
@@ -123,12 +124,15 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
 
     const spawnPlane = () => {
       const randomRoute = routes[Math.floor(Math.random() * routes.length)];
-      setPlanes(prev => [...prev, {
-        id: nextPlaneId,
-        route: randomRoute,
-        isReturning: false
-      }]);
-      setNextPlaneId(prev => prev + 1);
+      setPlanes((prev) => [
+        ...prev,
+        {
+          id: nextPlaneId,
+          route: randomRoute,
+          isReturning: false,
+        },
+      ]);
+      setNextPlaneId((prev) => prev + 1);
     };
 
     const interval = setInterval(spawnPlane, SPAWN_INTERVAL);
@@ -136,29 +140,27 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
   }, [routes, nextPlaneId]);
 
   const handlePlaneArrival = (planeId: number) => {
-    setPlanes(prev => {
-      const plane = prev.find(p => p.id === planeId);
+    setPlanes((prev) => {
+      const plane = prev.find((p) => p.id === planeId);
       if (!plane) return prev;
 
       if (plane.isReturning) {
         // Remove plane if it completed return journey
-        return prev.filter(p => p.id !== planeId);
+        return prev.filter((p) => p.id !== planeId);
       }
 
       // Create a new plane instance for the return journey
-      return prev.map(p => 
-        p.id === planeId ? { ...p, isReturning: true } : p
-      );
+      return prev.map((p) => (p.id === planeId ? { ...p, isReturning: true } : p));
     });
   };
 
   const handleSelect = (cityId: CityId) => {
     // Only show city info if not creating a route
     if (!selectedCity || selectedCity === cityId) {
-      const city = CITIES.find(c => c.id === cityId)!;
+      const city = CITIES.find((c) => c.id === cityId)!;
       setCityInfo({
         id: cityId,
-        position: city.position.clone()
+        position: city.position.clone(),
       });
       setSelectedCity(null);
     }
@@ -179,21 +181,26 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
   };
 
   const handleDragEnd = () => {
-    if (selectedCity && dragTargetCity && selectedCity !== dragTargetCity && !routeExists(routes, selectedCity, dragTargetCity)) {
-      const fromCity = CITIES.find(c => c.id === selectedCity)!;
-      const toCity = CITIES.find(c => c.id === dragTargetCity)!;
+    if (
+      selectedCity &&
+      dragTargetCity &&
+      selectedCity !== dragTargetCity &&
+      !routeExists(routes, selectedCity, dragTargetCity)
+    ) {
+      const fromCity = CITIES.find((c) => c.id === selectedCity)!;
+      const toCity = CITIES.find((c) => c.id === dragTargetCity)!;
       const midPoint = fromCity.position.clone().add(toCity.position).multiplyScalar(0.5);
-      
+
       const newPendingRoute = {
         from: selectedCity,
         to: dragTargetCity,
-        position: midPoint
+        position: midPoint,
       };
-      
+
       setTimeout(() => {
         setPendingRoute(newPendingRoute);
       }, 0);
-      
+
       setDragTargetCity(null);
     } else {
       setPendingRoute(null);
@@ -205,7 +212,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
 
   const handleRouteConfirm = () => {
     if (pendingRoute) {
-      setRoutes(prev => [...prev, { from: pendingRoute.from, to: pendingRoute.to }]);
+      setRoutes((prev) => [...prev, { from: pendingRoute.from, to: pendingRoute.to }]);
       setPendingRoute(null);
       setSelectedCity(null);
       setDragTargetCity(null);
@@ -234,13 +241,16 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
     }
   };
 
-  const updateCursorPosition = useCallback((event: MouseEvent) => {
-    const x = (event.clientX / size.width) * 2 - 1;
-    const y = -(event.clientY / size.height) * 2 + 1;
-    const vector = new Vector3(x, y, 0);
-    vector.unproject(camera);
-    setCursorPosition(vector);
-  }, [camera, size]);
+  const updateCursorPosition = useCallback(
+    (event: MouseEvent) => {
+      const x = (event.clientX / size.width) * 2 - 1;
+      const y = -(event.clientY / size.height) * 2 + 1;
+      const vector = new Vector3(x, y, 0);
+      vector.unproject(camera);
+      setCursorPosition(vector);
+    },
+    [camera, size]
+  );
 
   useFrame(({ gl }) => {
     gl.domElement.addEventListener('mousemove', updateCursorPosition);
@@ -270,18 +280,12 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
 
       {/* Render route preview */}
       {pendingRoute && (
-        <Line
-          start={getCityPosition(pendingRoute.from)}
-          end={getCityPosition(pendingRoute.to)}
-        />
+        <Line start={getCityPosition(pendingRoute.from)} end={getCityPosition(pendingRoute.to)} />
       )}
 
       {/* Render route preview in edit mode */}
       {selectedCity && !pendingRoute && (
-        <Line 
-          start={getCityPosition(selectedCity)} 
-          end={cursorPosition}
-        />
+        <Line start={getCityPosition(selectedCity)} end={cursorPosition} />
       )}
 
       {/* Render route confirmation popup */}
@@ -289,8 +293,8 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
         <RouteConfirmation
           key={`${pendingRoute.from}-${pendingRoute.to}`}
           position={pendingRoute.position}
-          fromCity={CITIES.find(c => c.id === pendingRoute.from)!.name}
-          toCity={CITIES.find(c => c.id === pendingRoute.to)!.name}
+          fromCity={CITIES.find((c) => c.id === pendingRoute.from)!.name}
+          toCity={CITIES.find((c) => c.id === pendingRoute.to)!.name}
           onConfirm={handleRouteConfirm}
           onCancel={handleRouteCancel}
         />
@@ -300,14 +304,14 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
       {cityInfo && !pendingRoute && (
         <CityInfo
           position={cityInfo.position}
-          cityName={CITIES.find(c => c.id === cityInfo.id)!.name}
+          cityName={CITIES.find((c) => c.id === cityInfo.id)!.name}
           onClose={handleCityInfoClose}
         />
       )}
 
       {/* Render cities */}
       {CITIES.map((city) => (
-        <City 
+        <City
           key={city.id}
           id={city.id}
           position={[city.position.x, city.position.y, city.position.z]}

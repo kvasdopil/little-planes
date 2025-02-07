@@ -9,4 +9,4 @@ export interface CityData {
   size: CitySize;
 }
 
-export type CityId = string; 
+export type CityId = string;

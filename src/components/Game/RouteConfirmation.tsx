@@ -9,7 +9,13 @@ interface RouteConfirmationProps {
   toCity: string;
 }
 
-export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toCity }: RouteConfirmationProps) => {
+export const RouteConfirmation = ({
+  position,
+  onConfirm,
+  onCancel,
+  fromCity,
+  toCity,
+}: RouteConfirmationProps) => {
   const handleBackgroundClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onCancel();
@@ -26,8 +32,8 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
 
   return (
     <Html position={position} center style={{ pointerEvents: 'none' }}>
-      <div 
-        style={{ 
+      <div
+        style={{
           pointerEvents: 'auto',
           backgroundColor: 'white',
           padding: '20px',
@@ -36,7 +42,7 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
           width: '200px',
           color: '#333',
           fontFamily: 'Arial, sans-serif',
-          position: 'relative'
+          position: 'relative',
         }}
         onClick={handleBackgroundClick}
       >
@@ -58,7 +64,7 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
             justifyContent: 'center',
             fontSize: '14px',
             padding: 0,
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
           }}
         >
           ×
@@ -86,12 +92,12 @@ export const RouteConfirmation = ({ position, onConfirm, onCancel, fromCity, toC
             fontSize: '14px',
             transition: 'background-color 0.2s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#45a049')}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#4CAF50')}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#45a049')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#4CAF50')}
         >
           Confirm Route
         </button>
       </div>
     </Html>
   );
-}; 
+};

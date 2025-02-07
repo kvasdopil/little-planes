@@ -22,26 +22,26 @@ const CITY_SIZES = {
   small: {
     radius: 0.15,
     fontSize: 0.12,
-    textOffset: -0.25
+    textOffset: -0.25,
   },
   big: {
     radius: 0.25,
     fontSize: 0.18,
-    textOffset: -0.35
-  }
+    textOffset: -0.35,
+  },
 };
 
-export const City = ({ 
-  position = [0, 0, 0], 
-  isSelected = false, 
-  onSelect, 
-  name, 
+export const City = ({
+  position = [0, 0, 0],
+  isSelected = false,
+  onSelect,
+  name,
   id,
   size = 'small',
   onDragStart,
   onDragOver,
   onDragEnd,
-  isDraggingActive = false
+  isDraggingActive = false,
 }: CityProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -49,7 +49,7 @@ export const City = ({
 
   const { scale } = useSpring({
     scale: isHovered ? 1.2 : 1,
-    config: { tension: 300, friction: 10 }
+    config: { tension: 300, friction: 10 },
   });
 
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
@@ -76,7 +76,7 @@ export const City = ({
 
   const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
-    
+
     if (isDragging && hasMoved) {
       onDragEnd?.(null);
     } else if (isHovered && isDraggingActive && !isDragging) {
@@ -84,7 +84,7 @@ export const City = ({
     } else if (!hasMoved) {
       onSelect?.();
     }
-    
+
     setIsDragging(false);
     setHasMoved(false);
     (event.target as HTMLElement).releasePointerCapture(event.pointerId);
@@ -116,9 +116,7 @@ export const City = ({
         userData={{ cursor: 'auto' }}
       >
         <circleGeometry args={[CITY_SIZES[size].radius, 32]} />
-        <meshBasicMaterial
-          color={isSelected ? 'yellow' : 'white'}
-        />
+        <meshBasicMaterial color={isSelected ? 'yellow' : 'white'} />
       </animated.mesh>
       {name && (
         <Text
@@ -133,4 +131,4 @@ export const City = ({
       )}
     </group>
   );
-}; 
+};
