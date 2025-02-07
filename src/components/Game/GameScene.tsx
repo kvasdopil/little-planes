@@ -196,6 +196,7 @@ const Scene = () => {
           isSelected={selectedCity === city.id}
           onSelect={() => handleSelect(city.id)}
           name={city.name}
+          size={city.size}
         />
       ))}
     </>

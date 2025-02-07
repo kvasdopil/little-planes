@@ -3,7 +3,7 @@ import { ThreeEvent } from '@react-three/fiber';
 import { Mesh } from 'three';
 import { Text } from '@react-three/drei';
 import { animated, useSpring } from '@react-spring/three';
-import { CityId } from '../../types/city';
+import { CityId, CitySize } from '../../types/city';
 
 interface CityProps {
   position?: [number, number, number];
@@ -11,10 +11,25 @@ interface CityProps {
   onSelect?: () => void;
   name?: string;
   id: CityId;
+  size: CitySize;
 }
 
-export const City = ({ position = [0, 0, 0], isSelected = false, onSelect, name }: CityProps) => {
+const CITY_SIZES = {
+  small: {
+    radius: 0.15,
+    fontSize: 0.12,
+    textOffset: -0.25
+  },
+  big: {
+    radius: 0.25,
+    fontSize: 0.18,
+    textOffset: -0.35
+  }
+};
+
+export const City = ({ position = [0, 0, 0], isSelected = false, onSelect, name, size = 'small' }: CityProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const sizeConfig = CITY_SIZES[size];
 
   const { scale } = useSpring({
     scale: isHovered ? 1.2 : 1,
@@ -47,15 +62,15 @@ export const City = ({ position = [0, 0, 0], isSelected = false, onSelect, name 
         onClick={handleClick}
         userData={{ cursor: 'auto' }}
       >
-        <circleGeometry args={[0.2, 32]} />
+        <circleGeometry args={[sizeConfig.radius, 32]} />
         <meshBasicMaterial
           color={isSelected ? 'yellow' : 'white'}
         />
       </animated.mesh>
       {name && (
         <Text
-          position={[0, -0.3, 0]}
-          fontSize={0.15}
+          position={[0, sizeConfig.textOffset, 0]}
+          fontSize={sizeConfig.fontSize}
           color="white"
           anchorX="center"
           anchorY="top"
