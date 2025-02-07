@@ -3,12 +3,14 @@ import { ThreeEvent } from '@react-three/fiber';
 import { Mesh } from 'three';
 import { Text } from '@react-three/drei';
 import { animated, useSpring } from '@react-spring/three';
+import { CityId } from '../../types/city';
 
 interface CityProps {
   position?: [number, number, number];
   isSelected?: boolean;
   onSelect?: () => void;
   name?: string;
+  id: CityId;
 }
 
 export const City = ({ position = [0, 0, 0], isSelected = false, onSelect, name }: CityProps) => {

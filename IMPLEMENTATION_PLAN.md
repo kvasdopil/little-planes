@@ -65,7 +65,23 @@ planes-game/
   - [x] Smooth transitions and rotations
   - [x] Speed optimization
 
-### Phase 4: Advanced Route Features
+### Phase 4: Map and Navigation ✅
+
+- [x] Set up Nordic cities layout
+  - [x] Add real city coordinates
+  - [x] Scale coordinates to game space
+  - [x] Optimize city placement
+- [x] Implement map navigation
+  - [x] Add panning controls
+  - [x] Add zoom controls
+  - [x] Set appropriate zoom limits
+  - [x] Auto-fit cities to viewport
+- [x] Polish city visuals
+  - [x] Add city names
+  - [x] Add hover animations
+  - [x] Optimize city spacing
+
+### Phase 5: Advanced Route Features
 
 - [ ] Add route validation rules:
   - [ ] Maximum route length
@@ -81,7 +97,7 @@ planes-game/
   - [ ] Traffic flow
   - [ ] Capacity indicators
 
-### Phase 5: City Features
+### Phase 6: City Features
 
 - [ ] Add different city types:
   - [ ] Resource producers
@@ -95,7 +111,7 @@ planes-game/
 - [ ] Add city growth mechanics
 - [ ] Implement trade system
 
-### Phase 6: Graphics and Effects
+### Phase 7: Graphics and Effects
 
 - [ ] Enhance city visuals:
   - [ ] Size based on population
@@ -112,7 +128,7 @@ planes-game/
 - [ ] Implement smooth animations
 - [ ] Add visual feedback for events
 
-### Phase 7: UI and Polish
+### Phase 8: UI and Polish
 
 - [ ] Design and implement HUD:
   - [ ] City information panel
@@ -124,7 +140,7 @@ planes-game/
 - [ ] Implement sound effects
 - [ ] Add background music
 
-### Phase 8: Deployment and Testing
+### Phase 9: Deployment and Testing
 
 - [ ] Set up CI/CD pipeline
 - [ ] Implement automated testing
