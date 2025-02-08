@@ -68,9 +68,11 @@ const INITIAL_ZOOM = calculateInitialZoom();
 
 export const GameScene = () => {
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
+  // Add money state
+  const [money, setMoney] = useState(0);
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Canvas>
         <OrthographicCamera makeDefault position={[0, 0, 5]} zoom={INITIAL_ZOOM} />
         <MapControls
@@ -87,8 +89,25 @@ export const GameScene = () => {
         <Scene
           onRouteCreateStart={() => setIsCreatingRoute(true)}
           onRouteCreateEnd={() => setIsCreatingRoute(false)}
+          setMoney={setMoney}
         />
       </Canvas>
+      {/* Money counter overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          fontSize: '20px',
+          color: 'white',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          padding: '5px 10px',
+          borderRadius: '5px',
+          zIndex: 100,
+        }}
+      >
+        $ {money}
+      </div>
     </div>
   );
 };
@@ -96,9 +115,10 @@ export const GameScene = () => {
 interface SceneProps {
   onRouteCreateStart: () => void;
   onRouteCreateEnd: () => void;
+  setMoney: (value: number | ((prev: number) => number)) => void;
 }
 
-const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
+const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) => {
   const { camera, size } = useThree();
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -143,6 +163,8 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
   }, [routes, nextPlaneId]);
 
   const handlePlaneArrival = (planeId: number) => {
+    // Increase money by $100 each time an airplane reaches its destination
+    setMoney((prev) => prev + 100);
     setPlanes((prev) => {
       const plane = prev.find((p) => p.id === planeId);
       if (!plane) return prev;
@@ -311,9 +333,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
           toCity={CITIES.find((c) => c.id === pendingRoute.to)!.name}
           onConfirm={handleRouteConfirm}
           onCancel={handleRouteCancel}
-          availableAirplanes={CITIES.find(
-            (c) => c.id === pendingRoute.from
-          )!.availableAirplanes.filter((a) => !a.isAssigned)}
+          availableAirplanes={CITIES.find((c) => c.id === pendingRoute.from)!.availableAirplanes.filter((a) => !a.isAssigned)}
         />
       )}
 
@@ -350,9 +370,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd }: SceneProps) => {
         const end = getCityPosition(plane.isReturning ? plane.route.from : plane.route.to);
         const route = routes.find((r) => r.from === plane.route.from && r.to === plane.route.to)!;
         const fromCity = CITIES.find((c) => c.id === route.from)!;
-        const airplane = fromCity.availableAirplanes.find(
-          (a) => a.id === route.assignedAirplaneId
-        )!;
+        const airplane = fromCity.availableAirplanes.find((a) => a.id === route.assignedAirplaneId)!;
 
         return (
           <Plane

@@ -112,6 +112,7 @@ planes-game/
   - [x] Close buttons
   - [x] Proper event handling
   - [x] Clear airplane model selection
+- [x] Display money counter overlay that increments by $100 on airplane arrival
 
 ### Phase 7: Advanced Route Features 🚧
 
