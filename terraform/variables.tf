@@ -4,23 +4,12 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "The GCP region"
+  description = "The GCP region to deploy to"
   type        = string
-  default     = "us-central1"
+  default     = "europe-west1"
 }
 
-variable "bucket_name" {
-  description = "The name of the storage bucket"
-  type        = string
-}
-
-variable "service_name" {
-  description = "The name of the Cloud Run service"
-  type        = string
-  default     = "planes-game-service"
-}
-
-variable "container_image" {
-  description = "The container image to deploy"
+variable "dns_zone_name" {
+  description = "The name of the DNS zone in Cloud DNS that manages guskov.dev"
   type        = string
 } 

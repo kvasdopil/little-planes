@@ -14,9 +14,15 @@ interface PlaneProps {
 // Create triangle geometry to represent the plane
 const triangleGeometry = new BufferGeometry();
 const vertices = new Float32Array([
-  0.0, -0.05, 0, // bottom
-  0.05, 0.05, 0, // top right
-  -0.05, 0.05, 0, // top left
+  0.0,
+  -0.05,
+  0, // bottom
+  0.05,
+  0.05,
+  0, // top right
+  -0.05,
+  0.05,
+  0, // top left
 ]);
 triangleGeometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
 

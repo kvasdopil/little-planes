@@ -208,9 +208,13 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
     flightControllersRef.current.set(flight.id, controller);
   };
 
-  const createNewFlight = (route: Route, airplane: AvailableAirplane, isReturning: boolean = false) => {
+  const createNewFlight = (
+    route: Route,
+    airplane: AvailableAirplane,
+    isReturning: boolean = false
+  ) => {
     const newId = nextPlaneIdRef.current++;
-    
+
     const newFlight: Flight = {
       id: newId,
       route,
@@ -219,13 +223,13 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
       startTime: performance.now(),
     };
 
-    setPlanes(prev => [...prev, newFlight]);
+    setPlanes((prev) => [...prev, newFlight]);
     startNewFlight(newFlight);
   };
 
   const handlePlaneArrival = (planeId: number) => {
     setMoney((prev) => prev + 100);
-    
+
     setPlanes((prev) => {
       const planeIndex = prev.findIndex((p) => p.id === planeId);
       if (planeIndex === -1) return prev;
@@ -247,15 +251,17 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
       // Start the new flight after a short delay to ensure clean transition
       setTimeout(() => startNewFlight(newFlight), 0);
 
-      return prev.map(p => p.id === planeId ? newFlight : p);
+      return prev.map((p) => (p.id === planeId ? newFlight : p));
     });
   };
 
   // Cleanup flight controllers on unmount
   useEffect(() => {
+    // Capture the ref value inside the effect
+    const controllers = flightControllersRef.current;
     return () => {
-      flightControllersRef.current.forEach(controller => controller.cancel());
-      flightControllersRef.current.clear();
+      controllers.forEach((controller) => controller.cancel());
+      controllers.clear();
     };
   }, []);
 
@@ -323,10 +329,10 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
       airplane.isAssigned = true;
 
       // Create the route with the assigned airplane
-      const newRoute = { 
-        from: pendingRoute.from, 
-        to: pendingRoute.to, 
-        assignedAirplaneId: selectedAirplaneId 
+      const newRoute = {
+        from: pendingRoute.from,
+        to: pendingRoute.to,
+        assignedAirplaneId: selectedAirplaneId,
       };
       setRoutes((prev) => [...prev, newRoute]);
 
@@ -371,7 +377,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
       vector.unproject(camera);
       setCursorPosition(vector);
     };
-    
+
     gl.domElement.addEventListener('mousemove', handleMouseMove);
     return () => {
       gl.domElement.removeEventListener('mousemove', handleMouseMove);
@@ -416,7 +422,9 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
           toCity={CITIES.find((c) => c.id === pendingRoute.to)!.name}
           onConfirm={handleRouteConfirm}
           onCancel={handleRouteCancel}
-          availableAirplanes={CITIES.find((c) => c.id === pendingRoute.from)!.availableAirplanes.filter((a) => !a.isAssigned)}
+          availableAirplanes={CITIES.find(
+            (c) => c.id === pendingRoute.from
+          )!.availableAirplanes.filter((a) => !a.isAssigned)}
         />
       )}
 

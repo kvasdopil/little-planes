@@ -9,7 +9,10 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
     "preview": "vite preview",
-    "deploy": "npm run build && gsutil -m rsync -r dist gs://BUCKET_NAME"
+    "predeploy": "npm run lint && npm run format",
+    "deploy:build": "npm run build",
+    "deploy:terraform": "cd terraform && ./deploy.sh",
+    "deploy": "npm run predeploy && npm run deploy:build && npm run deploy:terraform"
   },
   "dependencies": {
     "@react-spring/three": "^9.7.3",
