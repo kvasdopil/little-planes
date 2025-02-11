@@ -22,72 +22,66 @@ export const CITIES: CityData[] = [
     position: new Vector3(2.23, -2.53, 0),
     name: 'Gothenburg',
     size: 'small',
-    availableAirplanes: [{ id: 'bb7', model: 'Bingo Buzzer', isAssigned: false }],
+    availableAirplanes: [],
   },
   {
     id: 'copenhagen',
     position: new Vector3(2.36, -4.91, 0),
     name: 'Copenhagen',
     size: 'big',
-    availableAirplanes: [
-      { id: 'bb5', model: 'Bingo Buzzer', isAssigned: false },
-      { id: 'bb6', model: 'Bingo Buzzer', isAssigned: false },
-      { id: 'ff5', model: 'Fatso Fantastic', isAssigned: false },
-    ],
+    availableAirplanes: [],
   },
   {
     id: 'oslo',
     position: new Vector3(1.98, 0.04, 0),
     name: 'Oslo',
     size: 'small',
-    availableAirplanes: [
-      { id: 'bb4', model: 'Bingo Buzzer', isAssigned: false },
-      { id: 'ff4', model: 'Fatso Fantastic', isAssigned: false },
-    ],
+    availableAirplanes: [],
   },
   {
     id: 'bergen',
     position: new Vector3(0.82, 0.6, 0),
     name: 'Bergen',
     size: 'small',
-    availableAirplanes: [{ id: 'ff6', model: 'Fatso Fantastic', isAssigned: false }],
+    availableAirplanes: [],
   },
   {
     id: 'helsinki',
     position: new Vector3(5.0, 0.34, 0),
     name: 'Helsinki',
     size: 'small',
-    availableAirplanes: [
-      { id: 'bb3', model: 'Bingo Buzzer', isAssigned: false },
-      { id: 'ff2', model: 'Fatso Fantastic', isAssigned: false },
-      { id: 'ff3', model: 'Fatso Fantastic', isAssigned: false },
-    ],
+    availableAirplanes: [],
   },
   {
     id: 'tampere',
     position: new Vector3(4.75, 1.9, 0),
     name: 'Tampere',
     size: 'small',
-    availableAirplanes: [{ id: 'bb8', model: 'Bingo Buzzer', isAssigned: false }],
+    availableAirplanes: [],
   },
   {
     id: 'reykjavik',
     position: new Vector3(-5.0, 5.0, 0),
     name: 'Reykjavik',
     size: 'small',
-    availableAirplanes: [{ id: 'ff7', model: 'Fatso Fantastic', isAssigned: false }],
+    availableAirplanes: [],
   },
   {
     id: 'trondheim',
     position: new Vector3(1.9, 4.15, 0),
     name: 'Trondheim',
     size: 'small',
-    availableAirplanes: [{ id: 'bb9', model: 'Bingo Buzzer', isAssigned: false }],
+    availableAirplanes: [],
   },
 ];
 
 export const getCityPosition = (cityId: CityId): Vector3 => {
+  const city = findCity(cityId);
+  return city.position.clone();
+};
+
+export const findCity = (cityId: CityId): CityData => {
   const city = CITIES.find((c) => c.id === cityId);
   if (!city) throw new Error(`City ${cityId} not found`);
-  return city.position.clone();
+  return city;
 };

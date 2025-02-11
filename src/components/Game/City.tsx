@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ThreeEvent } from '@react-three/fiber';
 import { Mesh } from 'three';
-import { Text } from '@react-three/drei';
+import { Text, Html } from '@react-three/drei';
 import { animated, useSpring } from '@react-spring/three';
 import { CityId, CitySize } from '../../types/city';
 
@@ -16,6 +16,7 @@ interface CityProps {
   onDragOver?: (cityId: CityId) => void;
   onDragEnd?: (cityId: CityId | null) => void;
   isDraggingActive?: boolean;
+  hasAirplanes?: boolean;
 }
 
 const CITY_SIZES = {
@@ -23,11 +24,15 @@ const CITY_SIZES = {
     radius: 0.15,
     fontSize: 0.12,
     textOffset: -0.25,
+    iconOffset: { x: 0.15, y: 0.15 },
+    iconScale: 0.1,
   },
   big: {
     radius: 0.25,
     fontSize: 0.18,
     textOffset: -0.35,
+    iconOffset: { x: 0.25, y: 0.25 },
+    iconScale: 0.15,
   },
 };
 
@@ -42,6 +47,7 @@ export const City = ({
   onDragOver,
   onDragEnd,
   isDraggingActive = false,
+  hasAirplanes = false,
 }: CityProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -128,6 +134,18 @@ export const City = ({
         >
           {name}
         </Text>
+      )}
+      {hasAirplanes && (
+        <Html
+          position={[CITY_SIZES[size].iconOffset.x, CITY_SIZES[size].iconOffset.y, 0]}
+          center
+          style={{
+            fontSize: `${CITY_SIZES[size].fontSize * 32}px`,
+            filter: 'brightness(0) invert(1)',
+          }}
+        >
+          ✈️
+        </Html>
       )}
     </group>
   );

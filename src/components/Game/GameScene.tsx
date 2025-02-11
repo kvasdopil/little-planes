@@ -9,6 +9,7 @@ import { CityId, AvailableAirplane } from '../../types/city';
 import { CITIES, getCityPosition } from '../../constants/cities';
 import { RouteConfirmation } from './RouteConfirmation';
 import { CityInfo } from './CityInfo';
+import { FlightController } from '../../controllers/FlightController';
 
 const PLANE_SPEED = 2.0; // Units per second
 const VIEWPORT_MARGIN = 0.8; // 80% of viewport
@@ -65,52 +66,6 @@ const calculateInitialZoom = () => {
 };
 
 const INITIAL_ZOOM = calculateInitialZoom();
-
-class FlightController {
-  private startTime: number;
-  private cancelled: boolean = false;
-  private flightDuration: number;
-  private animationFrameId: number | null = null;
-
-  constructor(
-    private start: Vector3,
-    private end: Vector3,
-    private speed: number,
-    private onProgress: (position: Vector3) => void,
-    private onComplete: () => void
-  ) {
-    const totalDistance = end.clone().sub(start).length();
-    this.flightDuration = (totalDistance / speed) * 1000;
-    this.startTime = performance.now();
-    this.startFlight();
-  }
-
-  private startFlight = () => {
-    const animate = () => {
-      if (this.cancelled) return;
-
-      const progress = Math.min((performance.now() - this.startTime) / this.flightDuration, 1);
-      const currentPosition = this.start.clone().lerp(this.end, progress);
-      this.onProgress(currentPosition);
-
-      if (progress >= 1) {
-        this.onComplete();
-        return;
-      }
-
-      this.animationFrameId = requestAnimationFrame(animate);
-    };
-
-    this.animationFrameId = requestAnimationFrame(animate);
-  };
-
-  public cancel() {
-    this.cancelled = true;
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
-  }
-}
 
 export const GameScene = () => {
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
@@ -452,6 +407,7 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
           onDragOver={(cityId) => handleDragOver(cityId)}
           onDragEnd={handleDragEnd}
           isDraggingActive={selectedCity !== null}
+          hasAirplanes={city.availableAirplanes.some(plane => !plane.isAssigned)}
         />
       ))}
 

@@ -41,6 +41,16 @@
         "command": "npm run format",
         "message": "Please format code before committing"
       }
+    },
+    {
+      "name": "commit_suggestion_confirmation",
+      "description": "Do not suggest git commits before user confirms changes work",
+      "pattern": "git (commit|push)",
+      "check": {
+        "type": "prompt",
+        "message": "Have you confirmed that the changes work as expected?",
+        "required": true
+      }
     }
   ]
 } 
