@@ -1,15 +1,14 @@
-import React, { useRef, useEffect } from 'react';
-import * as THREE from 'three';
-import { Vector3, BufferGeometry, Float32BufferAttribute } from 'three';
+import React from 'react';
+import { Vector3, BufferGeometry, Float32BufferAttribute, Mesh } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { AirplaneModel } from '../../types/city';
 
 interface PlaneProps {
   start: Vector3;
   end: Vector3;
-  speed?: number;
-  onReachDestination?: () => void;
   model: AirplaneModel;
+  startTime: number;
+  speed: number;
 }
 
 // Create triangle geometry to represent the plane
@@ -21,44 +20,18 @@ const vertices = new Float32Array([
 ]);
 triangleGeometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
 
-const Plane: React.FC<PlaneProps> = ({ start, end, speed = 1, onReachDestination, model }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  // Store the flight start time
-  const startTimeRef = useRef<number>(0);
+const Plane: React.FC<PlaneProps> = ({ start, end, model, startTime, speed }) => {
+  const meshRef = React.useRef<Mesh>(null);
   const totalDistance = end.clone().sub(start).length();
-  // Compute the total flight duration in ms from distance and speed
   const flightDuration = (totalDistance / speed) * 1000;
 
-  // Presentation-level logic: update the mesh's position on every frame using useFrame.
   useFrame(() => {
     if (meshRef.current) {
-      const progress = Math.min((performance.now() - startTimeRef.current) / flightDuration, 1);
-      meshRef.current.position.copy(start.clone().lerp(end, progress));
+      const progress = Math.min((performance.now() - startTime) / flightDuration, 1);
+      const position = start.clone().lerp(end, progress);
+      meshRef.current.position.copy(position);
     }
   });
-
-  // Separate async function to detect when the flight is finished (using timestamps only)
-  useEffect(() => {
-    startTimeRef.current = performance.now();
-    let cancelled = false;
-
-    const startFlight = async () => {
-      while (!cancelled) {
-        const progress = Math.min((performance.now() - startTimeRef.current) / flightDuration, 1);
-
-        if (progress >= 1) {
-          onReachDestination?.();
-          break;
-        }
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-      }
-    };
-
-    startFlight();
-    return () => {
-      cancelled = true;
-    };
-  }, [start, end, speed, onReachDestination, totalDistance, flightDuration]);
 
   // Determine the flight's rotation so that the plane faces its movement direction
   const direction = end.clone().sub(start).normalize();

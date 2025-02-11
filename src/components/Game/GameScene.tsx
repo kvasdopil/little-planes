@@ -3,7 +3,7 @@ import { City } from './City';
 import { Line } from './Line';
 import Plane from './Plane';
 import { OrthographicCamera, MapControls } from '@react-three/drei';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Vector3, Mesh, PlaneGeometry, Box3 } from 'three';
 import { CityId, AvailableAirplane } from '../../types/city';
 import { CITIES, getCityPosition } from '../../constants/cities';
@@ -11,7 +11,6 @@ import { RouteConfirmation } from './RouteConfirmation';
 import { CityInfo } from './CityInfo';
 
 const PLANE_SPEED = 2.0; // Units per second
-const SPAWN_INTERVAL = 1000; // Spawn a new plane every second
 const VIEWPORT_MARGIN = 0.8; // 80% of viewport
 
 interface Route {
@@ -25,6 +24,7 @@ interface Flight {
   route: Route;
   isReturning: boolean;
   airplane: AvailableAirplane;
+  startTime: number;
 }
 
 interface PendingRoute {
@@ -65,6 +65,52 @@ const calculateInitialZoom = () => {
 };
 
 const INITIAL_ZOOM = calculateInitialZoom();
+
+class FlightController {
+  private startTime: number;
+  private cancelled: boolean = false;
+  private flightDuration: number;
+  private animationFrameId: number | null = null;
+
+  constructor(
+    private start: Vector3,
+    private end: Vector3,
+    private speed: number,
+    private onProgress: (position: Vector3) => void,
+    private onComplete: () => void
+  ) {
+    const totalDistance = end.clone().sub(start).length();
+    this.flightDuration = (totalDistance / speed) * 1000;
+    this.startTime = performance.now();
+    this.startFlight();
+  }
+
+  private startFlight = () => {
+    const animate = () => {
+      if (this.cancelled) return;
+
+      const progress = Math.min((performance.now() - this.startTime) / this.flightDuration, 1);
+      const currentPosition = this.start.clone().lerp(this.end, progress);
+      this.onProgress(currentPosition);
+
+      if (progress >= 1) {
+        this.onComplete();
+        return;
+      }
+
+      this.animationFrameId = requestAnimationFrame(animate);
+    };
+
+    this.animationFrameId = requestAnimationFrame(animate);
+  };
+
+  public cancel() {
+    this.cancelled = true;
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+  }
+}
 
 export const GameScene = () => {
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
@@ -123,7 +169,8 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [planes, setPlanes] = useState<Flight[]>([]);
-  const [nextPlaneId, setNextPlaneId] = useState(0);
+  const nextPlaneIdRef = useRef(0);
+  const flightControllersRef = useRef<Map<number, FlightController>>(new Map());
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
   const [pendingRoute, setPendingRoute] = useState<PendingRoute | null>(null);
   const [cityInfo, setCityInfo] = useState<SelectedCityInfo | null>(null);
@@ -140,51 +187,77 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
     camera.updateProjectionMatrix();
   }, [camera]);
 
-  // Spawn new planes periodically
-  useEffect(() => {
-    if (routes.length === 0) return;
+  const startNewFlight = (flight: Flight) => {
+    const start = getCityPosition(flight.isReturning ? flight.route.to : flight.route.from);
+    const end = getCityPosition(flight.isReturning ? flight.route.from : flight.route.to);
 
-    const spawnPlane = () => {
-      const randomRoute = routes[Math.floor(Math.random() * routes.length)];
-      const fromCity = CITIES.find((c) => c.id === randomRoute.from);
-      if (!fromCity) return;
-      const airplane = fromCity.availableAirplanes.find(
-        (a) => a.id === randomRoute.assignedAirplaneId
-      );
-      if (!airplane) return;
+    // Cancel existing flight controller if it exists
+    const existingController = flightControllersRef.current.get(flight.id);
+    if (existingController) {
+      existingController.cancel();
+    }
 
-      setPlanes((prev) => [
-        ...prev,
-        {
-          id: nextPlaneId,
-          route: randomRoute,
-          isReturning: false,
-          airplane,
-        },
-      ]);
-      setNextPlaneId((prev) => prev + 1);
+    const controller = new FlightController(
+      start,
+      end,
+      PLANE_SPEED,
+      () => {}, // No need for progress updates anymore
+      () => handlePlaneArrival(flight.id)
+    );
+
+    flightControllersRef.current.set(flight.id, controller);
+  };
+
+  const createNewFlight = (route: Route, airplane: AvailableAirplane, isReturning: boolean = false) => {
+    const newId = nextPlaneIdRef.current++;
+    
+    const newFlight: Flight = {
+      id: newId,
+      route,
+      isReturning,
+      airplane,
+      startTime: performance.now(),
     };
 
-    const interval = setInterval(spawnPlane, SPAWN_INTERVAL);
-    return () => clearInterval(interval);
-  }, [routes, nextPlaneId]);
+    setPlanes(prev => [...prev, newFlight]);
+    startNewFlight(newFlight);
+  };
 
   const handlePlaneArrival = (planeId: number) => {
-    // Increase money by $100 each time an airplane reaches its destination
     setMoney((prev) => prev + 100);
+    
     setPlanes((prev) => {
-      const plane = prev.find((p) => p.id === planeId);
-      if (!plane) return prev;
+      const planeIndex = prev.findIndex((p) => p.id === planeId);
+      if (planeIndex === -1) return prev;
 
-      if (plane.isReturning) {
-        // Remove plane if it completed return journey
-        return prev.filter((p) => p.id !== planeId);
-      }
+      const plane = prev[planeIndex];
+      const newId = nextPlaneIdRef.current++;
 
-      // Create a new plane instance for the return journey
-      return prev.map((p) => (p.id === planeId ? { ...p, isReturning: true } : p));
+      const newFlight: Flight = {
+        id: newId,
+        route: plane.route,
+        isReturning: !plane.isReturning,
+        airplane: plane.airplane,
+        startTime: performance.now(),
+      };
+
+      // Remove old flight controller
+      flightControllersRef.current.delete(planeId);
+
+      // Start the new flight after a short delay to ensure clean transition
+      setTimeout(() => startNewFlight(newFlight), 0);
+
+      return prev.map(p => p.id === planeId ? newFlight : p);
     });
   };
+
+  // Cleanup flight controllers on unmount
+  useEffect(() => {
+    return () => {
+      flightControllersRef.current.forEach(controller => controller.cancel());
+      flightControllersRef.current.clear();
+    };
+  }, []);
 
   const handleSelect = (cityId: CityId) => {
     // Only show city info if not creating a route
@@ -250,10 +323,15 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
       airplane.isAssigned = true;
 
       // Create the route with the assigned airplane
-      setRoutes((prev) => [
-        ...prev,
-        { from: pendingRoute.from, to: pendingRoute.to, assignedAirplaneId: selectedAirplaneId },
-      ]);
+      const newRoute = { 
+        from: pendingRoute.from, 
+        to: pendingRoute.to, 
+        assignedAirplaneId: selectedAirplaneId 
+      };
+      setRoutes((prev) => [...prev, newRoute]);
+
+      // Immediately create the first flight for this route
+      createNewFlight(newRoute, airplane, false);
 
       setPendingRoute(null);
       setSelectedCity(null);
@@ -370,21 +448,16 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
       ))}
 
       {/* Render planes */}
-      {planes.map((flight) => {
-        const start = getCityPosition(flight.isReturning ? flight.route.to : flight.route.from);
-        const end = getCityPosition(flight.isReturning ? flight.route.from : flight.route.to);
-
-        return (
-          <Plane
-            key={`${flight.id}-${flight.isReturning}`}
-            start={start}
-            end={end}
-            speed={PLANE_SPEED}
-            onReachDestination={() => handlePlaneArrival(flight.id)}
-            model={flight.airplane.model}
-          />
-        );
-      })}
+      {planes.map((flight) => (
+        <Plane
+          key={`${flight.id}`}
+          start={getCityPosition(flight.isReturning ? flight.route.to : flight.route.from)}
+          end={getCityPosition(flight.isReturning ? flight.route.from : flight.route.to)}
+          model={flight.airplane.model}
+          startTime={flight.startTime}
+          speed={PLANE_SPEED}
+        />
+      ))}
     </>
   );
 };
