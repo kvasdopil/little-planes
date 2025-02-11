@@ -1,50 +1,51 @@
-# React + TypeScript + Vite
+# Little Planes
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A network management game where you connect Nordic cities with air routes and manage a growing fleet of airplanes.
 
-Currently, two official plugins are available:
+[Play the game](https://planes.guskov.dev)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Overview
 
-## Expanding the ESLint configuration
+This is a test project to explore capabilities of AI agent assisted coding.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Features
 
-- Configure the top-level `parserOptions` property like this:
+- Interactive 3D map of Nordic cities
+- Drag-and-drop route creation
+- Multiple airplane types with different characteristics
+- Real-time flight animations
+- Economic system with earnings from completed flights
+- Smooth camera controls for map navigation
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Tech Stack
+
+- React with TypeScript for UI and game logic
+- Three.js with React Three Fiber for 3D rendering
+- Vite for build tooling and development
+- Terraform for infrastructure management
+- Google Cloud Platform for hosting
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Deploy to GCP
+npm run deploy
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Infrastructure
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+The game is hosted on Google Cloud Platform using:
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+- Cloud Storage for static hosting
+- Cloud CDN for content delivery
+- Load Balancer with SSL termination
+- Custom domain with automatic SSL certificate management
