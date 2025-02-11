@@ -1,11 +1,11 @@
-import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
+import { Canvas, useThree, ThreeEvent } from '@react-three/fiber';
 import { City } from './City';
 import { Line } from './Line';
 import { Plane } from './Plane';
 import { OrthographicCamera, MapControls } from '@react-three/drei';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Vector3, Mesh, PlaneGeometry, Box3 } from 'three';
-import { CityId } from '../../types/city';
+import { CityId, AvailableAirplane } from '../../types/city';
 import { CITIES, getCityPosition } from '../../constants/cities';
 import { RouteConfirmation } from './RouteConfirmation';
 import { CityInfo } from './CityInfo';
@@ -20,11 +20,11 @@ interface Route {
   assignedAirplaneId: string;
 }
 
-interface PlaneInstance {
+interface Flight {
   id: number;
   route: Route;
   isReturning: boolean;
-  airplaneId: string;
+  airplane: AvailableAirplane;
 }
 
 interface PendingRoute {
@@ -119,10 +119,10 @@ interface SceneProps {
 }
 
 const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) => {
-  const { camera, size } = useThree();
+  const { camera, size, gl } = useThree();
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
-  const [planes, setPlanes] = useState<PlaneInstance[]>([]);
+  const [planes, setPlanes] = useState<Flight[]>([]);
   const [nextPlaneId, setNextPlaneId] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(new Vector3());
   const [pendingRoute, setPendingRoute] = useState<PendingRoute | null>(null);
@@ -146,13 +146,20 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
 
     const spawnPlane = () => {
       const randomRoute = routes[Math.floor(Math.random() * routes.length)];
+      const fromCity = CITIES.find((c) => c.id === randomRoute.from);
+      if (!fromCity) return;
+      const airplane = fromCity.availableAirplanes.find(
+        (a) => a.id === randomRoute.assignedAirplaneId
+      );
+      if (!airplane) return;
+
       setPlanes((prev) => [
         ...prev,
         {
           id: nextPlaneId,
           route: randomRoute,
           isReturning: false,
-          airplaneId: randomRoute.assignedAirplaneId,
+          airplane,
         },
       ]);
       setNextPlaneId((prev) => prev + 1);
@@ -277,23 +284,21 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
     }
   };
 
-  const updateCursorPosition = useCallback(
-    (event: MouseEvent) => {
+  // Replace useFrame mouse listener with useEffect
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
       const x = (event.clientX / size.width) * 2 - 1;
       const y = -(event.clientY / size.height) * 2 + 1;
       const vector = new Vector3(x, y, 0);
       vector.unproject(camera);
       setCursorPosition(vector);
-    },
-    [camera, size]
-  );
-
-  useFrame(({ gl }) => {
-    gl.domElement.addEventListener('mousemove', updateCursorPosition);
-    return () => {
-      gl.domElement.removeEventListener('mousemove', updateCursorPosition);
     };
-  });
+    
+    gl.domElement.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      gl.domElement.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [gl.domElement, camera, size]);
 
   return (
     <>
@@ -365,21 +370,18 @@ const Scene = ({ onRouteCreateStart, onRouteCreateEnd, setMoney }: SceneProps) =
       ))}
 
       {/* Render planes */}
-      {planes.map((plane) => {
-        const start = getCityPosition(plane.isReturning ? plane.route.to : plane.route.from);
-        const end = getCityPosition(plane.isReturning ? plane.route.from : plane.route.to);
-        const route = routes.find((r) => r.from === plane.route.from && r.to === plane.route.to)!;
-        const fromCity = CITIES.find((c) => c.id === route.from)!;
-        const airplane = fromCity.availableAirplanes.find((a) => a.id === route.assignedAirplaneId)!;
+      {planes.map((flight) => {
+        const start = getCityPosition(flight.isReturning ? flight.route.to : flight.route.from);
+        const end = getCityPosition(flight.isReturning ? flight.route.from : flight.route.to);
 
         return (
           <Plane
-            key={`${plane.id}-${plane.isReturning}`}
+            key={`${flight.id}-${flight.isReturning}`}
             start={start}
             end={end}
             speed={PLANE_SPEED}
-            onReachDestination={() => handlePlaneArrival(plane.id)}
-            model={airplane.model}
+            onReachDestination={() => handlePlaneArrival(flight.id)}
+            model={flight.airplane.model}
           />
         );
       })}
