@@ -1,8 +1,8 @@
-import { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 import { Vector3, BufferGeometry, Float32BufferAttribute } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { AirplaneModel } from '../../types/city';
-import * as THREE from 'three';
 
 interface PlaneProps {
   start: Vector3;
@@ -12,50 +12,59 @@ interface PlaneProps {
   model: AirplaneModel;
 }
 
-// Create triangle geometry
+// Create triangle geometry to represent the plane
 const triangleGeometry = new BufferGeometry();
 const vertices = new Float32Array([
-  0.0,
-  -0.05,
-  0, // bottom
-  0.05,
-  0.05,
-  0, // top right
-  -0.05,
-  0.05,
-  0, // top left
+  0.0, -0.05, 0, // bottom
+  0.05, 0.05, 0, // top right
+  -0.05, 0.05, 0, // top left
 ]);
 triangleGeometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
 
-export const Plane = ({ start, end, speed = 1, onReachDestination, model }: PlaneProps) => {
+const Plane: React.FC<PlaneProps> = ({ start, end, speed = 1, onReachDestination, model }) => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const progressRef = useRef(0);
-  const hasReachedEndRef = useRef(false);
-  const direction = end.clone().sub(start).normalize();
+  // Store the flight start time
+  const startTimeRef = useRef<number>(0);
   const totalDistance = end.clone().sub(start).length();
+  // Compute the total flight duration in ms from distance and speed
+  const flightDuration = (totalDistance / speed) * 1000;
 
-  // Adjust color based on model
-  const color = model === 'Bingo Buzzer' ? 'yellow' : 'orange';
-
-  useFrame((_, delta) => {
-    if (hasReachedEndRef.current || !meshRef.current) return;
-
-    // Calculate distance to move this frame based on speed and delta time
-    const distanceThisFrame = speed * delta;
-    progressRef.current += distanceThisFrame / totalDistance;
-
-    if (progressRef.current >= 1) {
-      progressRef.current = 1;
-      hasReachedEndRef.current = true;
-      onReachDestination?.();
+  // Presentation-level logic: update the mesh's position on every frame using useFrame.
+  useFrame(() => {
+    if (meshRef.current) {
+      const progress = Math.min((performance.now() - startTimeRef.current) / flightDuration, 1);
+      meshRef.current.position.copy(start.clone().lerp(end, progress));
     }
-
-    // Update position directly without useState
-    meshRef.current.position.copy(start.clone().lerp(end, progressRef.current));
   });
 
-  // Calculate rotation to face movement direction
+  // Separate async function to detect when the flight is finished (using timestamps only)
+  useEffect(() => {
+    startTimeRef.current = performance.now();
+    let cancelled = false;
+
+    const startFlight = async () => {
+      while (!cancelled) {
+        const progress = Math.min((performance.now() - startTimeRef.current) / flightDuration, 1);
+
+        if (progress >= 1) {
+          onReachDestination?.();
+          break;
+        }
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+    };
+
+    startFlight();
+    return () => {
+      cancelled = true;
+    };
+  }, [start, end, speed, onReachDestination, totalDistance, flightDuration]);
+
+  // Determine the flight's rotation so that the plane faces its movement direction
+  const direction = end.clone().sub(start).normalize();
   const angle = Math.atan2(direction.y, direction.x) + Math.PI / 2;
+  // Choose color based on the airplane model
+  const color = model === 'Bingo Buzzer' ? 'yellow' : 'orange';
 
   return (
     <mesh ref={meshRef} rotation={[0, 0, angle]} geometry={triangleGeometry}>
@@ -63,3 +72,5 @@ export const Plane = ({ start, end, speed = 1, onReachDestination, model }: Plan
     </mesh>
   );
 };
+
+export default Plane;

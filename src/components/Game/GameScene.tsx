@@ -1,7 +1,7 @@
 import { Canvas, useThree, ThreeEvent } from '@react-three/fiber';
 import { City } from './City';
 import { Line } from './Line';
-import { Plane } from './Plane';
+import Plane from './Plane';
 import { OrthographicCamera, MapControls } from '@react-three/drei';
 import { useState, useEffect } from 'react';
 import { Vector3, Mesh, PlaneGeometry, Box3 } from 'three';
