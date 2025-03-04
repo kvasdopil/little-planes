@@ -20,7 +20,19 @@
   "plugins": ["react", "@typescript-eslint", "prettier"],
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "prettier/prettier": "error"
+    "prettier/prettier": "error",
+    "react/no-unknown-property": ["error", { 
+      "ignore": [
+        "args",
+        "uniforms",
+        "vertexShader",
+        "fragmentShader",
+        "transparent",
+        "side",
+        "blending",
+        "depthWrite"
+      ]
+    }]
   },
   "settings": {
     "react": {
