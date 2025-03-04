@@ -1,35 +1,43 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useRef } from 'react';
+import './App.css';
+import Cities from './components/Cities';
+import useGlobeSetup from './hooks/useGlobeSetup';
+import useEarthInteraction from './hooks/useEarthInteraction';
 
 function App() {
-  const [count, setCount] = useState(0)
+  // Reference to the container that will hold the scene
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  // Use the globe setup hook to initialize the scene
+  const { scene, camera, renderer, earth, horizontalPivot, verticalPivot, earthRadius } =
+    useGlobeSetup(mountRef);
+
+  // Use the Earth interaction hook to handle rotation, zooming, etc.
+  // No need to destructure anything else - the hook sets up event listeners internally
+  const { updateTargetRotation } = useEarthInteraction({
+    scene,
+    camera,
+    renderer,
+    earth,
+    horizontalPivot,
+    verticalPivot,
+  });
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app-container">
+      <div ref={mountRef} className="scene-container" style={{ width: '100%', height: '100vh' }} />
+      {scene && camera && horizontalPivot && verticalPivot && (
+        <Cities
+          scene={scene}
+          camera={camera}
+          earthRadius={earthRadius}
+          horizontalPivot={horizontalPivot}
+          verticalPivot={verticalPivot}
+          updateTargetRotation={updateTargetRotation}
+        />
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
