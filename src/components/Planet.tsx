@@ -4,15 +4,13 @@ import { Cities } from './Cities';
 
 interface PlanetProps {
   children?: ReactNode;
-  rotationSpeed: number;
-  position: [number, number, number];
-  scale: number;
+  sunRotationSpeed: number;
 }
 
-export const Planet = ({ children, rotationSpeed, position, scale }: PlanetProps) => {
+export const Planet = ({ children, sunRotationSpeed }: PlanetProps) => {
   return (
-    <group position={position} scale={scale}>
-      <Globe rotationSpeed={rotationSpeed} />
+    <group>
+      <Globe rotationSpeed={sunRotationSpeed} />
       <Cities />
       {children}
     </group>
