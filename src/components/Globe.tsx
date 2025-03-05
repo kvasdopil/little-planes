@@ -9,6 +9,9 @@ varying vec3 vNormal;
 varying vec3 vViewPosition;
 varying vec3 vTangent;
 varying vec3 vBitangent;
+varying vec3 vSunPosition;
+
+uniform vec3 sunPosition;
 
 void main() {
   vUv = uv;
@@ -19,6 +22,9 @@ void main() {
   vec3 bitangent = normalize(cross(vNormal, tangent));
   vTangent = tangent;
   vBitangent = bitangent;
+  
+  // Transform sun position to view space
+  vSunPosition = normalize(normalMatrix * sunPosition);
   
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   vViewPosition = -mvPosition.xyz;
@@ -38,6 +44,7 @@ varying vec3 vNormal;
 varying vec3 vViewPosition;
 varying vec3 vTangent;
 varying vec3 vBitangent;
+varying vec3 vSunPosition;
 
 void main() {
   vec4 dayTexel = texture2D(dayMap, vUv);
@@ -56,8 +63,8 @@ void main() {
   vec3 surfaceBitangent = normalize(vBitangent);
   surfaceNormal = normalize(surfaceNormal + dBx * surfaceTangent + dBy * surfaceBitangent);
   
-  vec3 normalizedSunPos = normalize(sunPosition);
-  float intensity = max(0.0, dot(surfaceNormal, normalizedSunPos));
+  // Use view-space sun position
+  float intensity = max(0.0, dot(surfaceNormal, normalize(vSunPosition)));
   
   // Smooth transition between day and night with enhanced contrast
   float dayMix = smoothstep(0.0, 0.3, intensity);
@@ -67,7 +74,7 @@ void main() {
   
   // Enhanced specular highlights
   vec3 viewDir = normalize(vViewPosition);
-  vec3 halfDir = normalize(normalizedSunPos + viewDir);
+  vec3 halfDir = normalize(vSunPosition + viewDir);
   float specular = pow(max(0.0, dot(surfaceNormal, halfDir)), 16.0);
   color.rgb += specular * 0.5;
   
@@ -80,11 +87,18 @@ const atmosphereVertexShader = `
 varying vec3 vNormal;
 varying vec3 vViewPosition;
 varying vec3 vWorldPosition;
+varying vec3 vSunPosition;
+
+uniform vec3 sunPosition;
 
 void main() {
   vNormal = normalize(normalMatrix * normal);
   vec4 worldPosition = modelMatrix * vec4(position, 1.0);
   vWorldPosition = worldPosition.xyz;
+  
+  // Transform sun position to view space
+  vSunPosition = normalize(normalMatrix * sunPosition);
+  
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   vViewPosition = -mvPosition.xyz;
   gl_Position = projectionMatrix * mvPosition;
@@ -97,6 +111,7 @@ uniform vec3 sunPosition;
 varying vec3 vNormal;
 varying vec3 vViewPosition;
 varying vec3 vWorldPosition;
+varying vec3 vSunPosition;
 
 const float R = 2.0; // Planet radius
 const float Kr = 0.0035;
@@ -121,11 +136,11 @@ float calculateScattering(float cosAngle, float sunDot) {
 }
 
 void main() {
-    vec3 normalizedSunPos = normalize(sunPosition);
+    // Use view-space sun position
     vec3 viewDir = normalize(vViewPosition);
     
-    // Calculate sun position relative to surface
-    float sunDot = dot(vNormal, normalizedSunPos);
+    // Calculate sun position relative to surface using view space coordinates
+    float sunDot = dot(vNormal, vSunPosition);
     
     // Enhanced atmosphere intersection
     float B = 2.0 * dot(viewDir, vNormal);
@@ -141,14 +156,14 @@ void main() {
     float scatter = depth * mix(Kr, Km, 0.5) * (1.0 + horizonDepth * 3.0);
     
     // Enhanced Rayleigh and Mie scattering
-    float cosTheta = dot(viewDir, normalizedSunPos);
+    float cosTheta = dot(viewDir, vSunPosition);
     float rayleigh = 0.75 * (1.0 + cosTheta * cosTheta);
     float mie = calculateScattering(cosTheta, sunDot);
     
     // Altitude-based density with enhanced horizon effect
     float altitude = length(vWorldPosition) - R;
     float baseDensity = exp(-altitude * 1.5);
-    float horizonDensity = 1.0 - abs(dot(viewDir, normalizedSunPos));
+    float horizonDensity = 1.0 - abs(dot(viewDir, vSunPosition));
     horizonDensity = pow(horizonDensity, 2.0);
     float density = baseDensity * (1.0 + horizonDensity * 2.0);
     
@@ -214,8 +229,10 @@ interface GlobeProps {
 export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
   const meshRef = useRef(null);
   const lightRef = useRef<DirectionalLight>(null);
-  const sunRef = useRef(new Vector3(5, 3, 5));
+  const sunPivotRef = useRef<THREE.Group>(null);
   const EARTH_RADIUS = 2;
+  const SUN_DISTANCE = 5;
+  const ECLIPTIC_TILT = 23.5 * (Math.PI / 180); // Earth's axial tilt in radians
 
   const [dayMap, nightMap, bumpMap] = useLoader(TextureLoader, [
     'https://threejs.org/examples/textures/planets/earth_day_4096.jpg',
@@ -229,7 +246,7 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
       dayMap: { value: dayMap },
       nightMap: { value: nightMap },
       bumpMap: { value: bumpMap },
-      sunPosition: { value: sunRef.current },
+      sunPosition: { value: new Vector3(SUN_DISTANCE, 0, 0) },
     },
     vertexShader,
     fragmentShader,
@@ -238,7 +255,7 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
   // Create atmosphere material
   const atmosphereMaterial = new ShaderMaterial({
     uniforms: {
-      sunPosition: { value: sunRef.current },
+      sunPosition: { value: new Vector3(SUN_DISTANCE, 0, 0) },
     },
     vertexShader: atmosphereVertexShader,
     fragmentShader: atmosphereFragmentShader,
@@ -249,17 +266,16 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
   });
 
   useFrame(({ clock }) => {
-    // Rotate sun around the earth
-    const angle = clock.getElapsedTime() * rotationSpeed;
-    sunRef.current.x = Math.cos(angle) * 5;
-    sunRef.current.z = Math.sin(angle) * 5;
-    sunRef.current.y = 3;
+    if (sunPivotRef.current) {
+      // Rotate the sun pivot
+      sunPivotRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
 
-    // Update uniforms and light position
-    earthMaterial.uniforms.sunPosition.value = sunRef.current;
-    atmosphereMaterial.uniforms.sunPosition.value = sunRef.current;
-    if (lightRef.current) {
-      lightRef.current.position.copy(sunRef.current);
+      // Get the sun's world position from the light
+      if (lightRef.current) {
+        const sunPosition = lightRef.current.getWorldPosition(new Vector3());
+        earthMaterial.uniforms.sunPosition.value.copy(sunPosition);
+        atmosphereMaterial.uniforms.sunPosition.value.copy(sunPosition);
+      }
     }
   });
 
@@ -267,7 +283,16 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
   return (
     <>
       <ambientLight intensity={0.5} />
-      <directionalLight ref={lightRef} position={[5, 3, 5]} intensity={1} />
+      {/* Tilted ecliptic plane for sun rotation */}
+      <group rotation={[ECLIPTIC_TILT, 0, 0]}>
+        <group ref={sunPivotRef}>
+          <directionalLight 
+            ref={lightRef} 
+            position={[SUN_DISTANCE, 0, 0]} 
+            intensity={1} 
+          />
+        </group>
+      </group>
       <mesh ref={meshRef}>
         <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
         <shaderMaterial

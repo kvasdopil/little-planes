@@ -19,7 +19,7 @@ export default function App() {
         enableDamping
         dampingFactor={0.05}
       />
-      <Planet rotationSpeed={0.1} />
+      <Planet rotationSpeed={-0.2} />
     </Canvas>
   );
 }

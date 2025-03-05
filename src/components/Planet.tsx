@@ -3,14 +3,14 @@ import { Globe } from './Globe';
 
 interface PlanetProps {
   children?: ReactNode;
-  rotationSpeed?: number;
+  rotationSpeed: number;
   position?: [number, number, number];
   scale?: number;
 }
 
 export const Planet = ({
   children,
-  rotationSpeed = 0.2,
+  rotationSpeed,
   position = [0, 0, 0],
   scale = 1,
 }: PlanetProps) => {
