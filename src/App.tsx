@@ -4,33 +4,52 @@ import { Planet } from './components/Planet';
 import { Camera } from './components/Camera';
 import './App.css';
 import { Stars } from './components/Stars';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Cities } from './components/Cities';
+import { WheelEvent } from 'react';
+
+const MIN_ZOOM = 2.2;
+const MAX_ZOOM = 10;
+const ZOOM_SPEED = 0.001;
 
 export default function App() {
   const [cameraPosition, setCameraPosition] = useState({
     latitude: 50,
     longitude: 15,
   });
+  const [zoom, setZoom] = useState(3);
 
   const handleCityClick = (latitude: number, longitude: number) => {
     setCameraPosition({ latitude, longitude });
   };
 
+  const handleWheel = useCallback(
+    (event: WheelEvent<HTMLDivElement>) => {
+      const delta = event.deltaY;
+      // Use square root of current zoom to make changes more gradual at higher zoom levels
+      const scaleFactor = Math.sqrt(zoom) * ZOOM_SPEED;
+      const newZoom = zoom + delta * scaleFactor;
+
+      // Clamp the zoom value between MIN_ZOOM and MAX_ZOOM
+      setZoom(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom)));
+    },
+    [zoom]
+  );
+
   return (
-    <Canvas>
+    <Canvas onWheel={handleWheel}>
       <color attach="background" args={['#000']} />
       <Stars count={5000} radius={50} />
       <Camera
         latitude={cameraPosition.latitude}
         longitude={cameraPosition.longitude}
-        distance={3}
+        distance={zoom}
         fov={55}
       />
       <OrbitControls
-        minDistance={2.2}
-        maxDistance={10}
-        zoomSpeed={0.5}
+        minDistance={MIN_ZOOM}
+        maxDistance={MAX_ZOOM}
+        enableZoom={false}
         enableDamping
         dampingFactor={0.05}
       />
