@@ -267,9 +267,10 @@ export const Globe = ({ rotationSpeed }: GlobeProps) => {
 
   useFrame(({ clock }) => {
     if (sunPivotRef.current) {
+      // FIXME: when i move the camera, the sun stops rotating
       // Rotate the sun pivot
       sunPivotRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
-
+      
       // Get the sun's world position from the light
       if (lightRef.current) {
         const sunPosition = lightRef.current.getWorldPosition(new Vector3());
