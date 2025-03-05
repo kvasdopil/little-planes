@@ -1,5 +1,4 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
 import { Planet } from './components/Planet';
 import { Camera } from './components/Camera';
 import './App.css';
@@ -7,6 +6,7 @@ import { Stars } from './components/Stars';
 import { useState, useCallback } from 'react';
 import { Cities } from './components/Cities';
 import { WheelEvent } from 'react';
+import { GlobeControls } from './components/GlobeControls';
 
 const MIN_ZOOM = 2.2;
 const MAX_ZOOM = 10;
@@ -18,6 +18,20 @@ export default function App() {
     longitude: 15,
   });
   const [zoom, setZoom] = useState(3);
+
+  const handleRotate = useCallback((deltaLongitude: number, deltaLatitude: number) => {
+    setCameraPosition((prev) => {
+      // Calculate new positions
+      const newLongitude = prev.longitude - deltaLongitude;
+      // Clamp latitude between -85 and 85 degrees
+      const newLatitude = Math.min(85, Math.max(-85, prev.latitude - deltaLatitude));
+
+      return {
+        latitude: newLatitude,
+        longitude: newLongitude,
+      };
+    });
+  }, []);
 
   const handleCityClick = (latitude: number, longitude: number) => {
     setCameraPosition({ latitude, longitude });
@@ -46,13 +60,7 @@ export default function App() {
         distance={zoom}
         fov={55}
       />
-      <OrbitControls
-        minDistance={MIN_ZOOM}
-        maxDistance={MAX_ZOOM}
-        enableZoom={false}
-        enableDamping
-        dampingFactor={0.05}
-      />
+      <GlobeControls onRotate={handleRotate} />
       <Planet sunRotationSpeed={-0.2}>
         <Cities onCityClick={handleCityClick} />
       </Planet>
