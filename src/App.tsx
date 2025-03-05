@@ -15,7 +15,7 @@ const ZOOM_SPEED = 0.001;
 export default function App() {
   const [cameraPosition, setCameraPosition] = useState({
     latitude: 50,
-    longitude: 15,
+    longitude: 90 + 15, // FIXME: This is a hack to fix the longitude
   });
   const [zoom, setZoom] = useState(3);
 
