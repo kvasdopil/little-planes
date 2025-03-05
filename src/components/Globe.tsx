@@ -7,10 +7,19 @@ const vertexShader = `
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vViewPosition;
+varying vec3 vTangent;
+varying vec3 vBitangent;
 
 void main() {
   vUv = uv;
   vNormal = normalize(normalMatrix * normal);
+  
+  // Calculate tangent space for bump mapping
+  vec3 tangent = normalize(normalMatrix * vec3(1.0, 0.0, 0.0));
+  vec3 bitangent = normalize(cross(vNormal, tangent));
+  vTangent = tangent;
+  vBitangent = bitangent;
+  
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   vViewPosition = -mvPosition.xyz;
   gl_Position = projectionMatrix * mvPosition;
@@ -27,25 +36,40 @@ uniform vec3 sunPosition;
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vViewPosition;
+varying vec3 vTangent;
+varying vec3 vBitangent;
 
 void main() {
   vec4 dayTexel = texture2D(dayMap, vUv);
   vec4 nightTexel = texture2D(nightMap, vUv);
+  vec4 bumpTexel = texture2D(bumpMap, vUv);
+  
+  // Calculate bump mapping
+  float bumpScale = -0.9;
+  vec2 dSTdx = dFdx(vUv);
+  vec2 dSTdy = dFdy(vUv);
+  float Hll = bumpScale * texture2D(bumpMap, vUv).x;
+  float dBx = bumpScale * texture2D(bumpMap, vUv + dSTdx).x - Hll;
+  float dBy = bumpScale * texture2D(bumpMap, vUv + dSTdy).x - Hll;
+  vec3 surfaceNormal = normalize(vNormal);
+  vec3 surfaceTangent = normalize(vTangent);
+  vec3 surfaceBitangent = normalize(vBitangent);
+  surfaceNormal = normalize(surfaceNormal + dBx * surfaceTangent + dBy * surfaceBitangent);
   
   vec3 normalizedSunPos = normalize(sunPosition);
-  float intensity = max(0.0, dot(vNormal, normalizedSunPos));
+  float intensity = max(0.0, dot(surfaceNormal, normalizedSunPos));
   
-  // Smooth transition between day and night
-  float dayMix = smoothstep(0.0, 0.4, intensity);
+  // Smooth transition between day and night with enhanced contrast
+  float dayMix = smoothstep(0.0, 0.3, intensity);
   
   // Mix between day and night textures
   vec4 color = mix(nightTexel, dayTexel, dayMix);
   
-  // Add specular highlight
+  // Enhanced specular highlights
   vec3 viewDir = normalize(vViewPosition);
   vec3 halfDir = normalize(normalizedSunPos + viewDir);
-  float specular = pow(max(0.0, dot(vNormal, halfDir)), 32.0);
-  color.rgb += specular * 0.3;
+  float specular = pow(max(0.0, dot(surfaceNormal, halfDir)), 16.0);
+  color.rgb += specular * 0.5;
   
   gl_FragColor = color;
 }
