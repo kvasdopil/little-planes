@@ -1,5 +1,4 @@
 import { useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import { Group, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 
@@ -22,7 +21,6 @@ export function CameraController({
       cameraRef.current.lookAt(0, 0, 0);
     }
   }, []);
-
 
   return (
     <group ref={pivotRef}>

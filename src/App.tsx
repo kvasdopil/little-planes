@@ -12,7 +12,13 @@ export default function App() {
       <color attach="background" args={['#000']} />
       <Stars count={5000} radius={50} />
       <CameraController />
-      <OrbitControls minDistance={3} maxDistance={10} zoomSpeed={0.5} enableDamping dampingFactor={0.05} />
+      <OrbitControls
+        minDistance={3}
+        maxDistance={10}
+        zoomSpeed={0.5}
+        enableDamping
+        dampingFactor={0.05}
+      />
       <Planet rotationSpeed={0.1} />
     </Canvas>
   );

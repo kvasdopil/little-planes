@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { TextureLoader, Vector3, ShaderMaterial, BackSide, DirectionalLight } from 'three';
 import { useLoader, useFrame } from '@react-three/fiber';
-import { Stars } from './Stars';
 
 // Vertex shader for Earth
 const vertexShader = `
