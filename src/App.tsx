@@ -1,5 +1,4 @@
 import { Canvas } from '@react-three/fiber';
-import { Planet } from './components/Planet';
 import { Camera } from './components/Camera';
 import './App.css';
 import { Stars } from './components/Stars';
@@ -7,6 +6,7 @@ import { useState, useCallback } from 'react';
 import { Cities } from './components/Cities';
 import { WheelEvent } from 'react';
 import { GlobeControls } from './components/GlobeControls';
+import { Globe } from './components/Globe';
 
 const MIN_ZOOM = 2.2;
 const MAX_ZOOM = 10;
@@ -66,9 +66,8 @@ export default function App() {
         fov={55}
       />
       <GlobeControls onRotate={handleRotate} />
-      <Planet sunRotationSpeed={-0.2}>
-        <Cities onCityClick={handleCityClick} />
-      </Planet>
+      <Globe rotationSpeed={-0.2} />
+      <Cities onCityClick={handleCityClick} />
     </Canvas>
   );
 }
