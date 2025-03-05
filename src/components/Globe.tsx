@@ -211,9 +211,7 @@ interface GlobeProps {
   rotationSpeed?: number;
 }
 
-export const Globe = ({
-  rotationSpeed = 0.2,
-}: GlobeProps = {}) => {
+export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
   const meshRef = useRef(null);
   const sunRef = useRef(new Vector3(5, 3, 5));
   const EARTH_RADIUS = 2;
@@ -266,7 +264,7 @@ export const Globe = ({
     <>
       <mesh ref={meshRef}>
         <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
-        <shaderMaterial 
+        <shaderMaterial
           uniforms={earthMaterial.uniforms}
           vertexShader={vertexShader}
           fragmentShader={fragmentShader}
@@ -274,7 +272,7 @@ export const Globe = ({
       </mesh>
       <mesh>
         <sphereGeometry args={[EARTH_RADIUS * 1.075, 64, 64]} />
-        <shaderMaterial 
+        <shaderMaterial
           uniforms={atmosphereMaterial.uniforms}
           vertexShader={atmosphereVertexShader}
           fragmentShader={atmosphereFragmentShader}

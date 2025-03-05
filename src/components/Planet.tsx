@@ -8,18 +8,16 @@ interface PlanetProps {
   scale?: number;
 }
 
-export const Planet = ({ 
+export const Planet = ({
   children,
-  rotationSpeed,
+  rotationSpeed = 0.2,
   position = [0, 0, 0],
   scale = 1,
 }: PlanetProps) => {
   return (
     <group position={position} scale={scale}>
-      <Globe 
-        rotationSpeed={rotationSpeed}
-      />
+      <Globe rotationSpeed={rotationSpeed} />
       {children}
     </group>
   );
-}; 
+};
