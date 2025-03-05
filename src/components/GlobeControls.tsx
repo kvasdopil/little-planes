@@ -11,11 +11,13 @@ interface GlobeControlsProps {
 /**
  * Globe controls component that handles rotation via raycasting
  * Provides camera control by dragging to rotate the globe view
+ * Uses absolute coordinates for stable camera movement
  */
 export function GlobeControls({ onRotate, radius = 2, visible = false }: GlobeControlsProps) {
   const { raycaster, camera, size } = useThree();
   const sphereRef = useRef<THREE.Mesh>(null);
-  const initialIntersectionRef = useRef<THREE.Vector3 | null>(null);
+  const currentPositionRef = useRef<{ longitude: number; latitude: number } | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
 
   const handlePointerDown = useCallback(
     (event: PointerEvent) => {
@@ -28,15 +30,28 @@ export function GlobeControls({ onRotate, radius = 2, visible = false }: GlobeCo
       const intersects = raycaster.intersectObject(sphereRef.current);
 
       if (intersects.length > 0) {
-        initialIntersectionRef.current = intersects[0].point;
+        isDraggingRef.current = true;
+        const point = intersects[0].point;
+
+        // Calculate absolute longitude and latitude (in degrees)
+        const longitude = (Math.atan2(point.x, point.z) * 180) / Math.PI;
+        const latitude = (Math.asin(point.y / radius) * 180) / Math.PI;
+
+        currentPositionRef.current = { longitude, latitude };
       }
     },
-    [raycaster, camera, size]
+    [raycaster, camera, size, radius]
   );
 
   const handlePointerMove = useCallback(
     (event: PointerEvent) => {
-      if (!sphereRef.current || !(event.buttons & 1) || !initialIntersectionRef.current) return;
+      if (
+        !sphereRef.current ||
+        !(event.buttons & 1) ||
+        !isDraggingRef.current ||
+        !currentPositionRef.current
+      )
+        return;
 
       const x = (event.clientX / size.width) * 2 - 1;
       const y = -(event.clientY / size.height) * 2 + 1;
@@ -45,22 +60,20 @@ export function GlobeControls({ onRotate, radius = 2, visible = false }: GlobeCo
       const intersects = raycaster.intersectObject(sphereRef.current);
 
       if (intersects.length > 0) {
-        const currentPoint = intersects[0].point;
+        const point = intersects[0].point;
 
-        // Calculate longitude change (horizontal rotation)
-        const initialLongitude = Math.atan2(
-          initialIntersectionRef.current.x,
-          initialIntersectionRef.current.z
-        );
-        const currentLongitude = Math.atan2(currentPoint.x, currentPoint.z);
-        const deltaLongitude = ((currentLongitude - initialLongitude) * 180) / Math.PI;
+        // Calculate current absolute coordinates (in degrees)
+        const longitude = (Math.atan2(point.x, point.z) * 180) / Math.PI;
+        const latitude = (Math.asin(point.y / radius) * 180) / Math.PI;
 
-        // Calculate latitude change (vertical rotation)
-        const initialLatitude =
-          (Math.asin(initialIntersectionRef.current.y / radius) * 180) / Math.PI;
-        const currentLatitude = (Math.asin(currentPoint.y / radius) * 180) / Math.PI;
-        const deltaLatitude = currentLatitude - initialLatitude;
+        // Calculate the deltas (differences) from previous position
+        const deltaLongitude = longitude - currentPositionRef.current.longitude;
+        const deltaLatitude = latitude - currentPositionRef.current.latitude;
 
+        // Update the current position reference
+        currentPositionRef.current = { longitude, latitude };
+
+        // Pass the deltas to the rotation handler
         onRotate(deltaLongitude, deltaLatitude);
       }
     },
@@ -68,7 +81,8 @@ export function GlobeControls({ onRotate, radius = 2, visible = false }: GlobeCo
   );
 
   const handlePointerUp = useCallback(() => {
-    initialIntersectionRef.current = null;
+    isDraggingRef.current = false;
+    currentPositionRef.current = null;
   }, []);
 
   useEffect(() => {

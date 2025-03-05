@@ -25,7 +25,7 @@ export function City({ latitude, longitude, size, onClick }: CityProps) {
 
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
-    onClick(latitude, longitude);
+    onClick(latitude, longitude + 90); // FIXME: This is a hack to fix the longitude
   };
 
   return (

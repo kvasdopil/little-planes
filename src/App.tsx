@@ -21,20 +21,25 @@ export default function App() {
 
   const handleRotate = useCallback((deltaLongitude: number, deltaLatitude: number) => {
     setCameraPosition((prev) => {
-      // Calculate new positions
+      // Calculate new longitude by subtracting delta (moving in opposite direction of drag)
       const newLongitude = prev.longitude - deltaLongitude;
-      // Clamp latitude between -85 and 85 degrees
+
+      // Normalize longitude to stay within -180 to 180 range
+      const normalizedLongitude = ((newLongitude + 180) % 360) - 180;
+
+      // Apply latitude changes and clamp between -85 and 85 degrees
       const newLatitude = Math.min(85, Math.max(-85, prev.latitude - deltaLatitude));
 
       return {
         latitude: newLatitude,
-        longitude: newLongitude,
+        longitude: normalizedLongitude,
       };
     });
   }, []);
 
   const handleCityClick = (latitude: number, longitude: number) => {
     setCameraPosition({ latitude, longitude });
+    setZoom(3);
   };
 
   const handleWheel = useCallback(
