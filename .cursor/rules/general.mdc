@@ -1,6 +1,6 @@
 ---
 description: General rules
-globs: 
+globs: *.tsx
 alwaysApply: false
 ---
 - When suggesting code or solutions, remember to check docs/memory.md for project context
@@ -24,3 +24,6 @@ alwaysApply: false
 - Lint code with `npm run lint`
 - make sure code is formatted, checked for errors, all docs are updated, and results are committed to git before starting a new feature
 - Make sure code is formatted, checked for errors, and all docs are updated before making a commit
+
+### React rules
+- Avoid using optional parameters for react components, prefer to always set values explicitly

@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Planet } from './components/Planet';
-import { CameraController } from './components/CameraController';
+import { Camera } from './components/Camera';
 import './App.css';
 import { Stars } from './components/Stars';
 
@@ -10,9 +10,9 @@ export default function App() {
     <Canvas>
       <color attach="background" args={['#000']} />
       <Stars count={5000} radius={50} />
-      <CameraController />
+      <Camera latitude={50} longitude={-15} distance={3} fov={55} />
       <OrbitControls
-        minDistance={3}
+        minDistance={2.2}
         maxDistance={10}
         zoomSpeed={0.5}
         enableDamping
