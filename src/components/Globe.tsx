@@ -1,6 +1,7 @@
 import { useRef } from 'react';
-import { TextureLoader, Vector3, ShaderMaterial, BackSide } from 'three';
+import { TextureLoader, Vector3, ShaderMaterial, BackSide, DirectionalLight } from 'three';
 import { useLoader, useFrame } from '@react-three/fiber';
+import { Stars } from './Stars';
 
 // Vertex shader for Earth
 const vertexShader = `
@@ -213,6 +214,7 @@ interface GlobeProps {
 
 export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
   const meshRef = useRef(null);
+  const lightRef = useRef<DirectionalLight>(null);
   const sunRef = useRef(new Vector3(5, 3, 5));
   const EARTH_RADIUS = 2;
 
@@ -254,14 +256,19 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
     sunRef.current.z = Math.sin(angle) * 5;
     sunRef.current.y = 3;
 
-    // Update uniforms
+    // Update uniforms and light position
     earthMaterial.uniforms.sunPosition.value = sunRef.current;
     atmosphereMaterial.uniforms.sunPosition.value = sunRef.current;
+    if (lightRef.current) {
+      lightRef.current.position.copy(sunRef.current);
+    }
   });
 
   /* eslint-disable react/no-unknown-property */
   return (
     <>
+      <ambientLight intensity={0.5} />
+      <directionalLight ref={lightRef} position={[5, 3, 5]} intensity={1} />
       <mesh ref={meshRef}>
         <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
         <shaderMaterial
@@ -271,7 +278,7 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
         />
       </mesh>
       <mesh>
-        <sphereGeometry args={[EARTH_RADIUS * 1.075, 64, 64]} />
+        <sphereGeometry args={[EARTH_RADIUS * 1.03, 64, 64]} />
         <shaderMaterial
           uniforms={atmosphereMaterial.uniforms}
           vertexShader={atmosphereVertexShader}

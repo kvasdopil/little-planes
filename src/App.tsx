@@ -3,16 +3,16 @@ import { OrbitControls } from '@react-three/drei';
 import { Planet } from './components/Planet';
 import { CameraController } from './components/CameraController';
 import './App.css';
+import { Stars } from './components/Stars';
 
 export default function App() {
   return (
     <Canvas>
       {/* eslint-disable-next-line react/no-unknown-property */}
       <color attach="background" args={['#000']} />
+      <Stars count={5000} radius={50} />
       <CameraController />
-      <OrbitControls />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 3, 5]} intensity={1} />
+      <OrbitControls minDistance={3} maxDistance={10} zoomSpeed={0.5} enableDamping dampingFactor={0.05} />
       <Planet rotationSpeed={0.1} />
     </Canvas>
   );
