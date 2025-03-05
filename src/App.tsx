@@ -5,6 +5,7 @@ import { Camera } from './components/Camera';
 import './App.css';
 import { Stars } from './components/Stars';
 import { useState } from 'react';
+import { Cities } from './components/Cities';
 
 export default function App() {
   const [cameraPosition, setCameraPosition] = useState({
@@ -33,7 +34,9 @@ export default function App() {
         enableDamping
         dampingFactor={0.05}
       />
-      <Planet sunRotationSpeed={-0.2} onCityClick={handleCityClick} />
+      <Planet sunRotationSpeed={-0.2}>
+        <Cities onCityClick={handleCityClick} />
+      </Planet>
     </Canvas>
   );
 }
