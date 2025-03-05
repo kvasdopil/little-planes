@@ -12,6 +12,7 @@
     "deploy": "npm run build && gsutil -m rsync -r dist gs://BUCKET_NAME"
   },
   "dependencies": {
+    "@react-spring/three": "^9.7.5",
     "@react-three/drei": "^9.92.7",
     "@react-three/fiber": "^8.15.12",
     "@types/three": "^0.159.0",
