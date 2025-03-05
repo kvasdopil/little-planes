@@ -1,5 +1,9 @@
 import { City } from './City';
 
+interface CitiesProps {
+  onCityClick: (latitude: number, longitude: number) => void;
+}
+
 const MAJOR_EUROPEAN_CITIES = [
   { name: 'Istanbul', latitude: 41.0082, longitude: 28.9784 },
   { name: 'Moscow', latitude: 55.7558, longitude: 37.6173 },
@@ -15,7 +19,7 @@ const MAJOR_EUROPEAN_CITIES = [
 
 const CITY_SIZE = 0.02;
 
-export function Cities() {
+export function Cities({ onCityClick }: CitiesProps) {
   return (
     <>
       {MAJOR_EUROPEAN_CITIES.map((city) => (
@@ -25,6 +29,7 @@ export function Cities() {
           latitude={city.latitude}
           longitude={city.longitude}
           size={CITY_SIZE}
+          onClick={onCityClick}
         />
       ))}
     </>
