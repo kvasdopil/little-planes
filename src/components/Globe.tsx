@@ -98,39 +98,112 @@ varying vec3 vNormal;
 varying vec3 vViewPosition;
 varying vec3 vWorldPosition;
 
+const float R = 2.0; // Planet radius
+const float Kr = 0.0035;
+const float Km = 0.0015;
+const float ESun = 50.0; // Increased sun brightness for stronger scattering
+const vec3 wavelength = vec3(0.650, 0.570, 0.475);
+const vec3 betaR = vec3(3.0 / (16.0 * 3.14159)) * Kr / pow(wavelength, vec3(4.0));
+const vec3 betaM = vec3(Kr * 0.3);
+
+// Helper function to calculate scattering based on sun angle
+float calculateScattering(float cosAngle, float sunDot) {
+    // Enhanced forward scattering
+    float g = 0.9; // Increased forward scattering factor
+    float scatter = 1.0 - g * g;
+    scatter /= (4.0 * 3.14159 * pow(1.0 + g * g - 2.0 * g * cosAngle, 1.5));
+    
+    // Add extra scattering near horizon
+    float horizonEffect = 1.0 - abs(sunDot);
+    horizonEffect = pow(horizonEffect, 3.0);
+    
+    return scatter * (1.0 + horizonEffect * 5.0);
+}
+
 void main() {
-  vec3 normalizedSunPos = normalize(sunPosition);
-  vec3 viewDir = normalize(vViewPosition);
-  
-  // Calculate atmosphere depth based on view angle
-  float atmosphereDepth = 1.0 - max(0.0, dot(viewDir, vNormal));
-  
-  // Calculate sun influence
-  float sunInfluence = max(0.0, dot(vNormal, normalizedSunPos));
-  
-  // Enhanced Fresnel effect
-  float fresnel = pow(atmosphereDepth, 3.0);
-  
-  // Atmosphere density gradient
-  float density = fresnel * (0.5 + sunInfluence * 0.5);
-  
-  // Darken the atmosphere on the night side
-  density *= smoothstep(-0.2, 0.3, sunInfluence);
-  
-  // Atmosphere color (more subtle blue)
-  vec3 atmosphereColor = mix(
-    vec3(0.1, 0.2, 0.5),   // Dark blue base
-    vec3(0.4, 0.6, 1.0),   // Light blue scatter
-    sunInfluence
-  );
-  
-  // Final color with enhanced scattering
-  vec3 finalColor = atmosphereColor * density;
-  
-  // Adjust opacity based on viewing angle and sun position
-  float alpha = density * 0.5 * smoothstep(-0.2, 0.3, sunInfluence);
-  
-  gl_FragColor = vec4(finalColor, alpha);
+    vec3 normalizedSunPos = normalize(sunPosition);
+    vec3 viewDir = normalize(vViewPosition);
+    
+    // Calculate sun position relative to surface
+    float sunDot = dot(vNormal, normalizedSunPos);
+    
+    // Enhanced atmosphere intersection
+    float B = 2.0 * dot(viewDir, vNormal);
+    float C = dot(vNormal, vNormal) - (R * R);
+    float det = B * B - 4.0 * C;
+    float near = 0.5 * (-B - sqrt(det));
+    float far = 0.5 * (-B + sqrt(det));
+    
+    // Calculate optical depth with enhanced horizon effect
+    float depth = far - near;
+    float horizonDepth = 1.0 - abs(sunDot);
+    horizonDepth = pow(horizonDepth, 2.0);
+    float scatter = depth * mix(Kr, Km, 0.5) * (1.0 + horizonDepth * 3.0);
+    
+    // Enhanced Rayleigh and Mie scattering
+    float cosTheta = dot(viewDir, normalizedSunPos);
+    float rayleigh = 0.75 * (1.0 + cosTheta * cosTheta);
+    float mie = calculateScattering(cosTheta, sunDot);
+    
+    // Altitude-based density with enhanced horizon effect
+    float altitude = length(vWorldPosition) - R;
+    float baseDensity = exp(-altitude * 1.5);
+    float horizonDensity = 1.0 - abs(dot(viewDir, normalizedSunPos));
+    horizonDensity = pow(horizonDensity, 2.0);
+    float density = baseDensity * (1.0 + horizonDensity * 2.0);
+    
+    // Enhanced rim lighting
+    float rim = 1.0 - abs(dot(viewDir, vNormal));
+    rim = pow(rim, 2.0);
+    
+    // Calculate sun scattering with enhanced sunrise/sunset
+    float sunsetStrength = 1.0 - abs(sunDot);
+    sunsetStrength = pow(sunsetStrength, 2.0);
+    vec3 sunsetColor = mix(
+        vec3(1.0, 0.6, 0.3), // Sunset orange
+        vec3(1.0, 0.4, 0.2), // Deep red
+        sunsetStrength
+    );
+    
+    // Enhanced atmosphere colors with sunset influence
+    vec3 rayleighColor = betaR * ESun * rayleigh * density;
+    vec3 mieColor = betaM * ESun * mie * density;
+    vec3 atmosphereColor = (rayleighColor + mieColor) * scatter;
+    
+    // Add sunset coloring to atmosphere
+    atmosphereColor *= mix(
+        vec3(1.0),
+        sunsetColor,
+        sunsetStrength * 0.7
+    );
+    
+    // Brighter color variations with enhanced sunset
+    vec3 dayColor = mix(
+        vec3(0.2, 0.4, 0.9),
+        vec3(0.5, 0.7, 1.0),
+        altitude * 0.5
+    );
+    
+    vec3 nightColor = mix(
+        vec3(0.1, 0.15, 0.3),
+        vec3(0.15, 0.25, 0.45),
+        altitude * 0.3
+    );
+    
+    // Enhanced day/night transition with sunset influence
+    float dayInfluence = smoothstep(-0.1, 0.3, sunDot);
+    vec3 baseColor = mix(nightColor, dayColor, dayInfluence);
+    baseColor = mix(baseColor, sunsetColor, sunsetStrength * (1.0 - dayInfluence) * 0.5);
+    
+    // Combine all effects with enhanced scattering
+    vec3 finalColor = baseColor * (atmosphereColor + rim * 0.5);
+    finalColor += atmosphereColor * sunsetStrength * 2.0; // Add extra glow during sunset
+    
+    // Adjust opacity with enhanced sunset effect
+    float alpha = density * (0.5 + 0.5 * dayInfluence) * (0.6 + 0.4 * rim);
+    alpha = clamp(alpha * (0.8 + sunsetStrength * 0.4), 0.0, 1.0);
+    
+    gl_FragColor = vec4(finalColor, alpha);
 }
 `;
 
