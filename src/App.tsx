@@ -10,7 +10,7 @@ export default function App() {
     <Canvas>
       <color attach="background" args={['#000']} />
       <Stars count={5000} radius={50} />
-      <Camera latitude={50} longitude={-15} distance={3} fov={55} />
+      <Camera latitude={50} longitude={15} distance={3} fov={55} />
       <OrbitControls
         minDistance={2.2}
         maxDistance={10}

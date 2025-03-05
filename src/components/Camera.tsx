@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { PerspectiveCamera } from '@react-three/drei';
-import { Group, PerspectiveCamera as ThreePerspectiveCamera, Vector3 } from 'three';
+import { Group, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
+import { geoToCartesian } from '../utils/coordinates';
 
 interface CameraProps {
   latitude: number;
@@ -9,25 +10,7 @@ interface CameraProps {
   fov: number;
 }
 
-function geoToCartesian(latitude: number, longitude: number, distance: number): Vector3 {
-  // Convert degrees to radians
-  const latRad = (latitude * Math.PI) / 180;
-  const lonRad = (longitude * Math.PI) / 180;
-
-  // Calculate position
-  const x = distance * Math.cos(latRad) * Math.cos(lonRad);
-  const y = distance * Math.sin(latRad);
-  const z = distance * Math.cos(latRad) * Math.sin(lonRad);
-
-  return new Vector3(x, y, z);
-}
-
-export function Camera({
-  latitude,
-  longitude,
-  distance,
-  fov
-}: CameraProps) {
+export function Camera({ latitude, longitude, distance, fov }: CameraProps) {
   const pivotRef = useRef<Group>(null);
   const cameraRef = useRef<ThreePerspectiveCamera>(null);
 
@@ -44,4 +27,4 @@ export function Camera({
       <PerspectiveCamera ref={cameraRef} makeDefault position={position} fov={fov} />
     </group>
   );
-} 
+}
