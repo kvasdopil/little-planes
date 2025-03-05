@@ -207,9 +207,16 @@ void main() {
 }
 `;
 
-export const Globe = () => {
+interface GlobeProps {
+  rotationSpeed?: number;
+}
+
+export const Globe = ({
+  rotationSpeed = 0.2,
+}: GlobeProps = {}) => {
   const meshRef = useRef(null);
   const sunRef = useRef(new Vector3(5, 3, 5));
+  const EARTH_RADIUS = 2;
 
   const [dayMap, nightMap, bumpMap] = useLoader(TextureLoader, [
     'https://threejs.org/examples/textures/planets/earth_day_4096.jpg',
@@ -244,7 +251,7 @@ export const Globe = () => {
 
   useFrame(({ clock }) => {
     // Rotate sun around the earth
-    const angle = clock.getElapsedTime() * 0.2;
+    const angle = clock.getElapsedTime() * rotationSpeed;
     sunRef.current.x = Math.cos(angle) * 5;
     sunRef.current.z = Math.sin(angle) * 5;
     sunRef.current.y = 3;
@@ -258,7 +265,7 @@ export const Globe = () => {
   return (
     <>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[2, 64, 64]} />
+        <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
         <shaderMaterial 
           uniforms={earthMaterial.uniforms}
           vertexShader={vertexShader}
@@ -266,7 +273,7 @@ export const Globe = () => {
         />
       </mesh>
       <mesh>
-        <sphereGeometry args={[2.15, 64, 64]} />
+        <sphereGeometry args={[EARTH_RADIUS * 1.075, 64, 64]} />
         <shaderMaterial 
           uniforms={atmosphereMaterial.uniforms}
           vertexShader={atmosphereVertexShader}
