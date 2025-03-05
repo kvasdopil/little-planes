@@ -8,7 +8,6 @@ import { Stars } from './components/Stars';
 export default function App() {
   return (
     <Canvas>
-      {/* eslint-disable-next-line react/no-unknown-property */}
       <color attach="background" args={['#000']} />
       <Stars count={5000} radius={50} />
       <CameraController />
@@ -19,7 +18,7 @@ export default function App() {
         enableDamping
         dampingFactor={0.05}
       />
-      <Planet rotationSpeed={-0.2} />
+      <Planet rotationSpeed={-0.2} position={[0, 0, 0]} scale={1} />
     </Canvas>
   );
 }

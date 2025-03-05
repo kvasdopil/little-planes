@@ -37,7 +37,27 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
       'react/no-unknown-property': ['error', { 
-        ignore: ['args', 'intensity', 'wireframe', 'position'] 
+        ignore: [
+          'args',
+          'uniforms',
+          'vertexShader',
+          'fragmentShader',
+          'transparent',
+          'side',
+          'blending',
+          'depthWrite',
+          'attach',
+          'position',
+          'rotation',
+          'scale',
+          'intensity',
+          'castShadow',
+          'receiveShadow',
+          'dispose',
+          'wireframe',
+          'vertexColors',
+          'sizeAttenuation'
+        ] 
       }],
       'no-undef': 'off'
     },

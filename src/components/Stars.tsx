@@ -18,11 +18,11 @@ const STAR_COLORS = [
 ];
 
 interface StarsProps {
-  count?: number;
-  radius?: number;
+  count: number;
+  radius: number;
 }
 
-export function Stars({ count = 5000, radius = 100 }: StarsProps) {
+export function Stars({ count, radius }: StarsProps) {
   const points = useRef<Points>(null);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export function Stars({ count = 5000, radius = 100 }: StarsProps) {
 
         // Random star size (with some stars being notably larger)
         const isLargeStar = Math.random() < LARGE_STAR_PROBABILITY;
-        sizes[i] = isLargeStar 
+        sizes[i] = isLargeStar
           ? LARGE_STAR_MIN_SIZE + Math.random() * (LARGE_STAR_MAX_SIZE - LARGE_STAR_MIN_SIZE)
           : SMALL_STAR_MIN_SIZE + Math.random() * (SMALL_STAR_MAX_SIZE - SMALL_STAR_MIN_SIZE);
       }
@@ -67,7 +67,6 @@ export function Stars({ count = 5000, radius = 100 }: StarsProps) {
     }
   }, [count, radius]);
 
-  /* eslint-disable react/no-unknown-property */
   return (
     <points ref={points}>
       <pointsMaterial
@@ -80,5 +79,4 @@ export function Stars({ count = 5000, radius = 100 }: StarsProps) {
       />
     </points>
   );
-  /* eslint-enable react/no-unknown-property */
 }

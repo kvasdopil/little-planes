@@ -223,10 +223,10 @@ void main() {
 `;
 
 interface GlobeProps {
-  rotationSpeed?: number;
+  rotationSpeed: number;
 }
 
-export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
+export const Globe = ({ rotationSpeed }: GlobeProps) => {
   const meshRef = useRef(null);
   const lightRef = useRef<DirectionalLight>(null);
   const sunPivotRef = useRef<THREE.Group>(null);
@@ -279,18 +279,13 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
     }
   });
 
-  /* eslint-disable react/no-unknown-property */
   return (
     <>
       <ambientLight intensity={0.5} />
       {/* Tilted ecliptic plane for sun rotation */}
       <group rotation={[ECLIPTIC_TILT, 0, 0]}>
         <group ref={sunPivotRef}>
-          <directionalLight 
-            ref={lightRef} 
-            position={[SUN_DISTANCE, 0, 0]} 
-            intensity={1} 
-          />
+          <directionalLight ref={lightRef} position={[SUN_DISTANCE, 0, 0]} intensity={1} />
         </group>
       </group>
       <mesh ref={meshRef}>
@@ -315,5 +310,4 @@ export const Globe = ({ rotationSpeed = 0.2 }: GlobeProps = {}) => {
       </mesh>
     </>
   );
-  /* eslint-enable react/no-unknown-property */
 };
