@@ -16,7 +16,7 @@ export function City({ latitude, longitude, size }: CityProps) {
   return (
     <group position={position}>
       <Sphere args={[size, 16, 16]}>
-        <meshStandardMaterial color="white" />
+        <meshBasicMaterial color="white" />
       </Sphere>
     </group>
   );
