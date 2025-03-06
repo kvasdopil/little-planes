@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { TextureLoader, Vector3, ShaderMaterial, BackSide, DirectionalLight } from 'three';
 import { useLoader, useFrame } from '@react-three/fiber';
 
+const ATMOSPHERE_HEIGHT = 0.03;
 // Vertex shader for Earth
 const vertexShader = `
 varying vec2 vUv;
@@ -270,7 +271,7 @@ export const Globe = ({ rotationSpeed }: GlobeProps) => {
       // FIXME: when i move the camera, the sun stops rotating
       // Rotate the sun pivot
       sunPivotRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
-      
+
       // Get the sun's world position from the light
       if (lightRef.current) {
         const sunPosition = lightRef.current.getWorldPosition(new Vector3());
@@ -298,7 +299,7 @@ export const Globe = ({ rotationSpeed }: GlobeProps) => {
         />
       </mesh>
       <mesh>
-        <sphereGeometry args={[EARTH_RADIUS * 1.03, 64, 64]} />
+        <sphereGeometry args={[EARTH_RADIUS * (1.0 + ATMOSPHERE_HEIGHT), 64, 64]} />
         <shaderMaterial
           uniforms={atmosphereMaterial.uniforms}
           vertexShader={atmosphereVertexShader}
