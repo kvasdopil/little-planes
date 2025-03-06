@@ -226,14 +226,15 @@ void main() {
 interface GlobeProps {
   rotationSpeed: number;
 }
+const EARTH_RADIUS = 2;
+const SUN_DISTANCE = 5;
+const ECLIPTIC_TILT = 23.5 * (Math.PI / 180); // Earth's axial tilt in radians
+const SEGMENTS = 128;
 
 export const Globe = ({ rotationSpeed }: GlobeProps) => {
   const meshRef = useRef(null);
   const lightRef = useRef<DirectionalLight>(null);
   const sunPivotRef = useRef<THREE.Group>(null);
-  const EARTH_RADIUS = 2;
-  const SUN_DISTANCE = 5;
-  const ECLIPTIC_TILT = 23.5 * (Math.PI / 180); // Earth's axial tilt in radians
 
   const [dayMap, nightMap, bumpMap] = useLoader(TextureLoader, [
     'https://threejs.org/examples/textures/planets/earth_day_4096.jpg',
@@ -255,9 +256,7 @@ export const Globe = ({ rotationSpeed }: GlobeProps) => {
 
   // Create atmosphere material
   const atmosphereMaterial = new ShaderMaterial({
-    uniforms: {
-      sunPosition: { value: new Vector3(SUN_DISTANCE, 0, 0) },
-    },
+    uniforms: { sunPosition: { value: new Vector3(SUN_DISTANCE, 0, 0) } },
     vertexShader: atmosphereVertexShader,
     fragmentShader: atmosphereFragmentShader,
     transparent: true,
@@ -291,7 +290,7 @@ export const Globe = ({ rotationSpeed }: GlobeProps) => {
         </group>
       </group>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
+        <sphereGeometry args={[EARTH_RADIUS, SEGMENTS, SEGMENTS]} />
         <shaderMaterial
           uniforms={earthMaterial.uniforms}
           vertexShader={vertexShader}
@@ -299,7 +298,7 @@ export const Globe = ({ rotationSpeed }: GlobeProps) => {
         />
       </mesh>
       <mesh>
-        <sphereGeometry args={[EARTH_RADIUS * (1.0 + ATMOSPHERE_HEIGHT), 64, 64]} />
+        <sphereGeometry args={[EARTH_RADIUS * (1.0 + ATMOSPHERE_HEIGHT), SEGMENTS, SEGMENTS]} />
         <shaderMaterial
           uniforms={atmosphereMaterial.uniforms}
           vertexShader={atmosphereVertexShader}

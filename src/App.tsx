@@ -3,7 +3,7 @@ import { Camera } from './components/Camera';
 import './App.css';
 import { Stars } from './components/Stars';
 import { useState, useCallback } from 'react';
-import { Cities } from './components/Cities';
+import { Cities, CityModel } from './components/Cities';
 import { WheelEvent } from 'react';
 import { GlobeControls } from './components/GlobeControls';
 import { Globe } from './components/Globe';
@@ -31,10 +31,8 @@ const DEFAULT_CAMERA_POSITION = {
 export default function App() {
   const [cameraPosition, setCameraPosition] = useState(DEFAULT_CAMERA_POSITION);
   const [zoom, setZoom] = useState(3);
-  const [selectedCity, setSelectedCity] = useState<{ latitude: number; longitude: number } | null>(
-    null
-  );
-  const [routes] =
+  const [selectedCity, setSelectedCity] = useState<CityModel | null>(null);
+  const [routes, setRoutes] =
     useState<Array<{ startLat: number; startLon: number; endLat: number; endLon: number }>>(
       DEFAULT_ROUTES
     );
@@ -60,17 +58,38 @@ export default function App() {
     [selectedCity]
   );
 
-  const handleCityClick = (latitude: number, longitude: number) => {
-    // Only handle city clicks when not creating a route
-    if (!selectedCity) {
-      setCameraPosition({ latitude, longitude });
-      setZoom(3);
-    }
-  };
+  const handleCityMouseDown = useCallback((city: CityModel) => {
+    setSelectedCity(city);
+  }, []);
 
-  const handleCityMouseDown = (latitude: number, longitude: number) => {
-    setSelectedCity({ latitude, longitude });
-  };
+  const createRoute = useCallback((startCity: CityModel, endCity: CityModel) => {
+    setRoutes((routes) => [
+      ...routes,
+      {
+        startLat: startCity.latitude,
+        startLon: startCity.longitude,
+        endLat: endCity.latitude,
+        endLon: endCity.longitude,
+      },
+    ]);
+  }, []);
+
+  const handleCityMouseUp = useCallback(
+    (city: CityModel) => {
+      // when releasing the mouse on the same city, we zoom in on it
+      if (selectedCity === city) {
+        setCameraPosition({ latitude: city.latitude, longitude: city.longitude + 90 });
+        setZoom(3);
+        return;
+      }
+
+      if (!selectedCity) return;
+
+      // otherwise, we create a route
+      createRoute(selectedCity, city);
+    },
+    [selectedCity, createRoute]
+  );
 
   // Handle mouse up on the globe (including cities) to end route creation
   const handleGlobeMouseUp = useCallback(() => {
@@ -109,7 +128,7 @@ export default function App() {
       <GlobeControls onRotate={handleRotate} />
       <Globe rotationSpeed={-0.2} />
       <Cities
-        onCityClick={handleCityClick}
+        onCityMouseUp={handleCityMouseUp}
         onCityMouseDown={handleCityMouseDown}
         selectedCity={selectedCity}
       />

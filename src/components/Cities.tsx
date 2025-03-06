@@ -2,12 +2,18 @@ import { City } from './City';
 import { CityLabel } from './CityLabel';
 
 interface CitiesProps {
-  onCityClick: (latitude: number, longitude: number) => void;
-  onCityMouseDown?: (latitude: number, longitude: number) => void;
-  selectedCity?: { latitude: number; longitude: number } | null;
+  onCityMouseDown: (city: CityModel) => void;
+  onCityMouseUp: (city: CityModel) => void;
+  selectedCity: CityModel | null;
 }
 
-const MAJOR_EUROPEAN_CITIES = [
+export interface CityModel {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+const MAJOR_EUROPEAN_CITIES: CityModel[] = [
   { name: 'Istanbul', latitude: 41.0082, longitude: 28.9784 },
   { name: 'Moscow', latitude: 55.7558, longitude: 37.6173 },
   { name: 'London', latitude: 51.5074, longitude: -0.1278 },
@@ -22,17 +28,7 @@ const MAJOR_EUROPEAN_CITIES = [
 
 const CITY_SIZE = 0.02;
 
-export function Cities({ onCityClick, onCityMouseDown, selectedCity }: CitiesProps) {
-  // Helper function to check if a city is selected
-  const isCitySelected = (latitude: number, longitude: number) => {
-    if (!selectedCity) return false;
-
-    // Account for the longitude fix that's applied in the City component
-    const adjustedLongitude = longitude + 90;
-
-    return selectedCity.latitude === latitude && selectedCity.longitude === adjustedLongitude;
-  };
-
+export function Cities({ onCityMouseDown, onCityMouseUp, selectedCity }: CitiesProps) {
   return (
     <>
       {MAJOR_EUROPEAN_CITIES.map((city) => (
@@ -42,9 +38,9 @@ export function Cities({ onCityClick, onCityMouseDown, selectedCity }: CitiesPro
           latitude={city.latitude}
           longitude={city.longitude}
           size={CITY_SIZE}
-          onClick={onCityClick}
-          onMouseDown={onCityMouseDown}
-          isSelected={isCitySelected(city.latitude, city.longitude)}
+          onMouseDown={() => onCityMouseDown(city)}
+          onMouseUp={() => onCityMouseUp(city)}
+          isSelected={selectedCity === city}
         >
           <CityLabel name={city.name} />
         </City>
