@@ -1,4 +1,5 @@
 import { City } from './City';
+import { CityLabel } from './CityLabel';
 
 interface CitiesProps {
   onCityClick: (latitude: number, longitude: number) => void;
@@ -30,7 +31,9 @@ export function Cities({ onCityClick }: CitiesProps) {
           longitude={city.longitude}
           size={CITY_SIZE}
           onClick={onCityClick}
-        />
+        >
+          <CityLabel name={city.name} />
+        </City>
       ))}
     </>
   );

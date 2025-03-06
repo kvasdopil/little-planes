@@ -12,7 +12,6 @@ import { FlightPath } from './components/FlightPath';
 const MIN_ZOOM = 2.2;
 const MAX_ZOOM = 10;
 const ZOOM_SPEED = 0.001;
-const ATMOSPHERE_HEIGHT = 0.03;
 
 export default function App() {
   const [cameraPosition, setCameraPosition] = useState({
