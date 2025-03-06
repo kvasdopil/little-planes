@@ -8,6 +8,7 @@ import { WheelEvent } from 'react';
 import { GlobeControls } from './components/GlobeControls';
 import { Globe } from './components/Globe';
 import { FlightPath } from './components/FlightPath';
+import { Airplane } from './components/Airplane';
 
 const MIN_ZOOM = 2.2;
 const MAX_ZOOM = 10;
@@ -152,12 +153,10 @@ export default function App() {
 
       {/* Render all routes */}
       {routes.map((route, index) => (
-        <FlightPath
-          key={`route-${index}`}
-          startCity={route.startCity}
-          endCity={route.endCity}
-          maxHeight={0.08}
-        />
+        <group key={`route-${index}`}>
+          <FlightPath startCity={route.startCity} endCity={route.endCity} maxHeight={0.08} />
+          <Airplane startCity={route.startCity} endCity={route.endCity} maxHeight={0.08} />
+        </group>
       ))}
 
       {/* Render preview route */}
