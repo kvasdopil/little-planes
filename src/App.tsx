@@ -32,11 +32,27 @@ export default function App() {
   const [selectedCity, setSelectedCity] = useState<CityModel | null>(null);
   const [routes, setRoutes] =
     useState<Array<{ startCity: CityModel; endCity: CityModel }>>(DEFAULT_ROUTES);
+  const [mousePosition, setMousePosition] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const handleRotate = useCallback(
-    (deltaLongitude: number, deltaLatitude: number) => {
+    (
+      deltaLongitude: number,
+      deltaLatitude: number,
+      currentPosition?: { latitude: number; longitude: number }
+    ) => {
       // Don't rotate the camera while creating a route
-      if (selectedCity) return;
+      if (selectedCity) {
+        if (currentPosition) {
+          setMousePosition({
+            latitude: currentPosition.latitude,
+            longitude: currentPosition.longitude - 90,
+          });
+        }
+        return;
+      }
 
       setCameraPosition((prev) => {
         // Calculate new longitude by subtracting delta (moving in opposite direction of drag)
@@ -59,7 +75,19 @@ export default function App() {
   }, []);
 
   const createRoute = useCallback((startCity: CityModel, endCity: CityModel) => {
-    setRoutes((routes) => [...routes, { startCity, endCity }]);
+    setRoutes((routes) => {
+      // Check if route already exists in either direction
+      const isDuplicate = routes.some(
+        (route) =>
+          (route.startCity.name === startCity.name && route.endCity.name === endCity.name) ||
+          (route.startCity.name === endCity.name && route.endCity.name === startCity.name)
+      );
+
+      // If the route already exists, don't add it
+      if (isDuplicate) return routes;
+
+      return [...routes, { startCity, endCity }];
+    });
   }, []);
 
   const handleCityMouseUp = useCallback(
@@ -84,6 +112,7 @@ export default function App() {
     if (selectedCity) {
       // Reset route creation mode
       setSelectedCity(null);
+      setMousePosition(null);
     }
   }, [selectedCity]);
 
@@ -130,6 +159,15 @@ export default function App() {
           maxHeight={0.08}
         />
       ))}
+
+      {/* Render preview route */}
+      {selectedCity && mousePosition && (
+        <FlightPath
+          startCity={selectedCity}
+          endCity={{ name: 'Mouse Position', ...mousePosition }}
+          maxHeight={0.08}
+        />
+      )}
     </Canvas>
   );
 }

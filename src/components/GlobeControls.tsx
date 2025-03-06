@@ -3,7 +3,11 @@ import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 
 interface GlobeControlsProps {
-  onRotate: (deltaLongitude: number, deltaLatitude: number) => void;
+  onRotate: (
+    deltaLongitude: number,
+    deltaLatitude: number,
+    currentPosition?: { latitude: number; longitude: number }
+  ) => void;
   radius?: number;
   visible?: boolean;
 }
@@ -45,13 +49,7 @@ export function GlobeControls({ onRotate, radius = 2, visible = false }: GlobeCo
 
   const handlePointerMove = useCallback(
     (event: PointerEvent) => {
-      if (
-        !sphereRef.current ||
-        !(event.buttons & 1) ||
-        !isDraggingRef.current ||
-        !currentPositionRef.current
-      )
-        return;
+      if (!sphereRef.current) return;
 
       const x = (event.clientX / size.width) * 2 - 1;
       const y = -(event.clientY / size.height) * 2 + 1;
@@ -65,16 +63,23 @@ export function GlobeControls({ onRotate, radius = 2, visible = false }: GlobeCo
         // Calculate current absolute coordinates (in degrees)
         const longitude = (Math.atan2(point.x, point.z) * 180) / Math.PI;
         const latitude = (Math.asin(point.y / radius) * 180) / Math.PI;
+        const currentPosition = { latitude, longitude };
 
-        // Calculate the deltas (differences) from previous position
-        const deltaLongitude = longitude - currentPositionRef.current.longitude;
-        const deltaLatitude = latitude - currentPositionRef.current.latitude;
+        // If we're dragging, handle rotation
+        if (isDraggingRef.current && currentPositionRef.current) {
+          // Calculate the deltas (differences) from previous position
+          const deltaLongitude = longitude - currentPositionRef.current.longitude;
+          const deltaLatitude = latitude - currentPositionRef.current.latitude;
 
-        // Update the current position reference
-        currentPositionRef.current = { longitude, latitude };
+          // Update the current position reference
+          currentPositionRef.current = currentPosition;
 
-        // Pass the deltas to the rotation handler
-        onRotate(deltaLongitude, deltaLatitude);
+          // Pass the deltas and current position to the rotation handler
+          onRotate(deltaLongitude, deltaLatitude, currentPosition);
+        } else {
+          // If not dragging, just pass the current position with no rotation
+          onRotate(0, 0, currentPosition);
+        }
       }
     },
     [raycaster, camera, size, onRotate, radius]
