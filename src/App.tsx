@@ -7,10 +7,12 @@ import { Cities } from './components/Cities';
 import { WheelEvent } from 'react';
 import { GlobeControls } from './components/GlobeControls';
 import { Globe } from './components/Globe';
+import { FlightPath } from './components/FlightPath';
 
 const MIN_ZOOM = 2.2;
 const MAX_ZOOM = 10;
 const ZOOM_SPEED = 0.001;
+const ATMOSPHERE_HEIGHT = 0.03;
 
 export default function App() {
   const [cameraPosition, setCameraPosition] = useState({
@@ -68,6 +70,13 @@ export default function App() {
       <GlobeControls onRotate={handleRotate} />
       <Globe rotationSpeed={-0.2} />
       <Cities onCityClick={handleCityClick} />
+      <FlightPath
+        startLat={59.9343}
+        startLon={30.3351}
+        endLat={40.4168}
+        endLon={-3.7038}
+        maxHeight={0.08}
+      />
     </Canvas>
   );
 }
