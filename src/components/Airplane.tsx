@@ -8,20 +8,21 @@ interface AirplaneProps {
   startCity: CityModel;
   endCity: CityModel;
   maxHeight: number;
+  speed?: number;
 }
 
 const EARTH_RADIUS = 2;
 const CONE_LENGTH = 0.04;
 const CONE_RADIUS = 0.01;
-const ANIMATION_SPEED = 0.05; // Controls the speed of airplane movement
 
 // Pre-create rotation matrix for the cone
 const rotationX = new Matrix4().makeRotationX(-Math.PI / 2);
 const originVector = new Vector3(0, 0, 0);
 
-export function Airplane({ startCity, endCity, maxHeight }: AirplaneProps) {
+export function Airplane({ startCity, endCity, maxHeight, speed = 0.05 }: AirplaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const progressRef = useRef<number>(Math.random()); // Start at random position
+  const progressRef = useRef<number>(0);
+  const direction = useRef<number>(1);
 
   // Create the curve once when props change
   const curve = useMemo(
@@ -29,12 +30,20 @@ export function Airplane({ startCity, endCity, maxHeight }: AirplaneProps) {
     [startCity, endCity, maxHeight]
   );
 
+  // set aircraft speed based on distance between start and end city
+  const distance = curve.getLength();
+
   // Update position and rotation on each frame
   useFrame((_, delta) => {
     if (meshRef.current) {
       // Update progress using the delta time between frames
-      progressRef.current += ANIMATION_SPEED * delta;
-      if (progressRef.current > 1) progressRef.current = 0;
+      progressRef.current += (direction.current * (delta * speed)) / distance;
+      if (progressRef.current > 1) {
+        direction.current = -1;
+      }
+      if (progressRef.current < 0) {
+        direction.current = 1;
+      }
 
       // Get point at current progress
       const pos = curve.getPointAt(progressRef.current);
