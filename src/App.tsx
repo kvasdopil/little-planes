@@ -16,10 +16,8 @@ const ZOOM_SPEED = 0.001;
 // Default route from Madrid to St. Petersburg
 const DEFAULT_ROUTES = [
   {
-    startLat: 40.4168, // Madrid
-    startLon: -3.7038,
-    endLat: 59.9343, // St. Petersburg
-    endLon: 30.3351,
+    startCity: { name: 'Madrid', latitude: 40.4168, longitude: -3.7038 },
+    endCity: { name: 'Saint Petersburg', latitude: 59.9343, longitude: 30.3351 },
   },
 ];
 
@@ -33,9 +31,7 @@ export default function App() {
   const [zoom, setZoom] = useState(3);
   const [selectedCity, setSelectedCity] = useState<CityModel | null>(null);
   const [routes, setRoutes] =
-    useState<Array<{ startLat: number; startLon: number; endLat: number; endLon: number }>>(
-      DEFAULT_ROUTES
-    );
+    useState<Array<{ startCity: CityModel; endCity: CityModel }>>(DEFAULT_ROUTES);
 
   const handleRotate = useCallback(
     (deltaLongitude: number, deltaLatitude: number) => {
@@ -63,15 +59,7 @@ export default function App() {
   }, []);
 
   const createRoute = useCallback((startCity: CityModel, endCity: CityModel) => {
-    setRoutes((routes) => [
-      ...routes,
-      {
-        startLat: startCity.latitude,
-        startLon: startCity.longitude,
-        endLat: endCity.latitude,
-        endLon: endCity.longitude,
-      },
-    ]);
+    setRoutes((routes) => [...routes, { startCity, endCity }]);
   }, []);
 
   const handleCityMouseUp = useCallback(
@@ -137,10 +125,8 @@ export default function App() {
       {routes.map((route, index) => (
         <FlightPath
           key={`route-${index}`}
-          startLat={route.startLat}
-          startLon={route.startLon}
-          endLat={route.endLat}
-          endLon={route.endLon}
+          startCity={route.startCity}
+          endCity={route.endCity}
           maxHeight={0.08}
         />
       ))}

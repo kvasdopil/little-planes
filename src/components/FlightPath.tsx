@@ -1,21 +1,20 @@
 import { QuadraticBezierLine } from '@react-three/drei';
 import { Vector3 } from 'three';
 import { geoToCartesian } from '../utils/coordinates';
+import { CityModel } from './Cities';
 
 interface FlightPathProps {
-  startLat: number;
-  startLon: number;
-  endLat: number;
-  endLon: number;
+  startCity: CityModel;
+  endCity: CityModel;
   maxHeight: number;
 }
 
 const EARTH_RADIUS = 2;
 
-export function FlightPath({ startLat, startLon, endLat, endLon, maxHeight }: FlightPathProps) {
+export function FlightPath({ startCity, endCity, maxHeight }: FlightPathProps) {
   // Convert start and end points to Cartesian coordinates
-  const start = geoToCartesian(startLat, startLon, EARTH_RADIUS);
-  const end = geoToCartesian(endLat, endLon, EARTH_RADIUS);
+  const start = geoToCartesian(startCity.latitude, startCity.longitude, EARTH_RADIUS);
+  const end = geoToCartesian(endCity.latitude, endCity.longitude, EARTH_RADIUS);
 
   // Calculate midpoint between start and end
   const midpoint = new Vector3().addVectors(start, end).multiplyScalar(0.5);
