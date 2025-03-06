@@ -10,10 +10,20 @@ interface CityProps {
   longitude: number;
   size: number;
   onClick: (latitude: number, longitude: number) => void;
+  onMouseDown?: (latitude: number, longitude: number) => void;
+  isSelected?: boolean;
   children?: ReactNode;
 }
 
-export function City({ latitude, longitude, size, onClick, children }: CityProps) {
+export function City({
+  latitude,
+  longitude,
+  size,
+  onClick,
+  onMouseDown,
+  isSelected = false,
+  children,
+}: CityProps) {
   const [hovered, setHovered] = useState(false);
 
   const springs = useSpring({
@@ -25,6 +35,16 @@ export function City({ latitude, longitude, size, onClick, children }: CityProps
     event.stopPropagation();
     onClick(latitude, longitude + 90); // FIXME: This is a hack to fix the longitude
   };
+
+  const handleMouseDown = (event: ThreeEvent<MouseEvent>) => {
+    event.stopPropagation();
+    if (onMouseDown) {
+      onMouseDown(latitude, longitude + 90);
+    }
+  };
+
+  // Determine the color based on selection state
+  const cityColor = isSelected ? 'yellow' : 'white';
 
   return (
     <ConstantSizeElement
@@ -39,9 +59,10 @@ export function City({ latitude, longitude, size, onClick, children }: CityProps
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
         onClick={handleClick}
+        onPointerDown={handleMouseDown}
       >
         <Sphere args={[size, 16, 16]}>
-          <meshBasicMaterial color="white" />
+          <meshBasicMaterial color={cityColor} />
         </Sphere>
       </animated.mesh>
       {children}

@@ -3,6 +3,8 @@ import { CityLabel } from './CityLabel';
 
 interface CitiesProps {
   onCityClick: (latitude: number, longitude: number) => void;
+  onCityMouseDown?: (latitude: number, longitude: number) => void;
+  selectedCity?: { latitude: number; longitude: number } | null;
 }
 
 const MAJOR_EUROPEAN_CITIES = [
@@ -20,7 +22,17 @@ const MAJOR_EUROPEAN_CITIES = [
 
 const CITY_SIZE = 0.02;
 
-export function Cities({ onCityClick }: CitiesProps) {
+export function Cities({ onCityClick, onCityMouseDown, selectedCity }: CitiesProps) {
+  // Helper function to check if a city is selected
+  const isCitySelected = (latitude: number, longitude: number) => {
+    if (!selectedCity) return false;
+
+    // Account for the longitude fix that's applied in the City component
+    const adjustedLongitude = longitude + 90;
+
+    return selectedCity.latitude === latitude && selectedCity.longitude === adjustedLongitude;
+  };
+
   return (
     <>
       {MAJOR_EUROPEAN_CITIES.map((city) => (
@@ -31,6 +43,8 @@ export function Cities({ onCityClick }: CitiesProps) {
           longitude={city.longitude}
           size={CITY_SIZE}
           onClick={onCityClick}
+          onMouseDown={onCityMouseDown}
+          isSelected={isCitySelected(city.latitude, city.longitude)}
         >
           <CityLabel name={city.name} />
         </City>
