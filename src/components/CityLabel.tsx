@@ -4,8 +4,8 @@ interface CityLabelProps {
   name: string;
 }
 
-const LABEL_SIZE = 0.05;
-const LABEL_OFFSET: [number, number, number] = [0, 0.05, 0.01];
+const LABEL_SIZE = 0.025;
+const LABEL_OFFSET: [number, number, number] = [0, 0.03, 0.01];
 
 export function CityLabel({ name }: CityLabelProps) {
   return (
@@ -14,9 +14,9 @@ export function CityLabel({ name }: CityLabelProps) {
       color="white"
       anchorX="center"
       anchorY="middle"
-      outlineWidth="15%"
+      outlineWidth="10%"
       outlineColor="#000000"
-      outlineOpacity={0.8}
+      outlineOpacity={0.7}
       maxWidth={2}
       position={LABEL_OFFSET}
     >
