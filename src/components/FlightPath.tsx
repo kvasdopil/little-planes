@@ -1,4 +1,4 @@
-import { QuadraticBezierLine } from '@react-three/drei';
+import { CubicBezierLine } from '@react-three/drei';
 import { useMemo } from 'react';
 import { CityModel } from './Cities';
 import { createFlightCurve } from '../utils/flightCurve';
@@ -21,13 +21,18 @@ export function FlightPath({ startCity, endCity, maxHeight }: FlightPathProps) {
   // Extract points for rendering the curve
   const start = curve.getPointAt(0);
   const end = curve.getPointAt(1);
-  const mid = curve.getPointAt(0.5);
+
+  // For a cubic bezier curve, we need to get the two control points
+  // Since createFlightCurve returns CubicBezierCurve3, we can access its control points
+  const midA = curve.v1;
+  const midB = curve.v2;
 
   return (
-    <QuadraticBezierLine
+    <CubicBezierLine
       start={start}
       end={end}
-      mid={mid}
+      midA={midA}
+      midB={midB}
       color="white"
       lineWidth={3}
       dashed={false}

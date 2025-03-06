@@ -21,13 +21,9 @@ export function createFlightCurve(
   const start = geoToCartesian(startCity.latitude, startCity.longitude, earthRadius);
   const end = geoToCartesian(endCity.latitude, endCity.longitude, earthRadius);
 
-  // Calculate midpoint for the arc
-  const midpoint = new Vector3().lerpVectors(start, end, 0.5);
-  const midpointHeight = midpoint
-    .clone()
-    .normalize()
-    .multiplyScalar(earthRadius * (1.0 + maxHeight));
+  const controlPoint1 = new Vector3().lerpVectors(start, end, 0.1).normalize().multiplyScalar(earthRadius * (1.0 + maxHeight));
+  const controlPoint2 = new Vector3().lerpVectors(start, end, 0.9).normalize().multiplyScalar(earthRadius * (1.0 + maxHeight));
 
   // Create a cubic bezier curve
-  return new CubicBezierCurve3(start, midpointHeight, midpointHeight, end);
+  return new CubicBezierCurve3(start, controlPoint1, controlPoint2, end);
 }

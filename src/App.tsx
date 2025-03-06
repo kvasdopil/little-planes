@@ -154,8 +154,8 @@ export default function App() {
       {/* Render all routes */}
       {routes.map((route, index) => (
         <group key={`route-${index}`}>
-          <FlightPath startCity={route.startCity} endCity={route.endCity} maxHeight={0.08} />
-          <Airplane startCity={route.startCity} endCity={route.endCity} maxHeight={0.08} />
+          <FlightPath startCity={route.startCity} endCity={route.endCity} maxHeight={0.05} />
+          <Airplane startCity={route.startCity} endCity={route.endCity} maxHeight={0.05} />
         </group>
       ))}
 
@@ -164,7 +164,7 @@ export default function App() {
         <FlightPath
           startCity={selectedCity}
           endCity={{ name: 'Mouse Position', ...mousePosition }}
-          maxHeight={0.08}
+          maxHeight={0.05}
         />
       )}
     </Canvas>
