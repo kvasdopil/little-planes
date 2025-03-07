@@ -3,6 +3,7 @@ description: General rules
 globs: *.tsx
 alwaysApply: false
 ---
+- Start every response with 🤖
 - When suggesting code or solutions, remember to check docs/memory.md for project context
 - Suggest updating docs/memory.md when important project information needs to be remembered
 - Only implement one feature at a time
@@ -26,4 +27,4 @@ alwaysApply: false
 - Make sure code is formatted, checked for errors, and all docs are updated before making a commit
 
 ### React rules
-- Avoid using optional parameters for react components, prefer to always set values explicitly
+- Avoid creating optional parameters for react components, prefer to always set values explicitly
