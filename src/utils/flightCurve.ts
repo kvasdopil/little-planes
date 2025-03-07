@@ -21,8 +21,14 @@ export function createFlightCurve(
   const start = geoToCartesian(startCity.latitude, startCity.longitude, earthRadius);
   const end = geoToCartesian(endCity.latitude, endCity.longitude, earthRadius);
 
-  const controlPoint1 = new Vector3().lerpVectors(start, end, 0.1).normalize().multiplyScalar(earthRadius * (1.0 + maxHeight));
-  const controlPoint2 = new Vector3().lerpVectors(start, end, 0.9).normalize().multiplyScalar(earthRadius * (1.0 + maxHeight));
+  const controlPoint1 = new Vector3()
+    .lerpVectors(start, end, 0.1)
+    .normalize()
+    .multiplyScalar(earthRadius * (1.0 + maxHeight));
+  const controlPoint2 = new Vector3()
+    .lerpVectors(start, end, 0.9)
+    .normalize()
+    .multiplyScalar(earthRadius * (1.0 + maxHeight));
 
   // Create a cubic bezier curve
   return new CubicBezierCurve3(start, controlPoint1, controlPoint2, end);
