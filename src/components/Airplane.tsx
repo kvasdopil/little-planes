@@ -1,15 +1,17 @@
-import { Matrix4, Vector3, Mesh, MeshBasicMaterial } from 'three';
+import { Matrix4, Vector3, MeshStandardMaterial, Mesh } from 'three';
 import { useRef, useMemo, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { CityModel } from './Cities';
 import { createFlightCurve } from '../utils/flightCurve';
 import { useFBX } from '@react-three/drei';
+import { AirplaneParticles } from './AirplaneParticles';
 
 interface AirplaneProps {
   startCity: CityModel;
   endCity: CityModel;
   maxHeight: number;
   speed?: number;
+  color?: string; // Added color prop for customization
 }
 
 const EARTH_RADIUS = 2;
@@ -18,10 +20,20 @@ const EARTH_RADIUS = 2;
 const rotationX = new Matrix4().makeRotationX(-Math.PI / 2);
 const originVector = new Vector3(0, 0, 0);
 
-export function Airplane({ startCity, endCity, maxHeight, speed = 0.05 }: AirplaneProps) {
+export function Airplane({
+  startCity,
+  endCity,
+  maxHeight,
+  speed = 0.05,
+  color = '#ffffff',
+}: AirplaneProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const emitterLeft = useRef<THREE.Group>(null);
+  const emitterRight = useRef<THREE.Group>(null);
   const progressRef = useRef<number>(0);
   const [direction, setDirection] = useState<number>(1);
+  // Keep track of current tangent for particle direction
+  const currentTangent = useRef<Vector3>(new Vector3());
 
   // Create the curve once when props change
   const curve = useMemo(
@@ -51,6 +63,8 @@ export function Airplane({ startCity, endCity, maxHeight, speed = 0.05 }: Airpla
 
       // Get the tangent at this point (direction of travel)
       const tangent = curve.getTangentAt(progressRef.current);
+      // Store the current tangent for particle emission
+      currentTangent.current = tangent;
 
       // Calculate the up vector (pointing away from Earth's center)
       const up = pos.clone().normalize();
@@ -72,8 +86,12 @@ export function Airplane({ startCity, endCity, maxHeight, speed = 0.05 }: Airpla
     // Clone the original model to create a unique instance
     const clonedModel = originalModel.clone();
 
-    // Create a standard material
-    const standardMaterial = new MeshBasicMaterial({ color: 0xdddddd });
+    // Create a standard material with the specified color
+    const standardMaterial = new MeshStandardMaterial({
+      color: color,
+      metalness: 0.6,
+      roughness: 0.2,
+    });
 
     // Apply the material to all mesh children
     clonedModel.traverse((child) => {
@@ -84,7 +102,7 @@ export function Airplane({ startCity, endCity, maxHeight, speed = 0.05 }: Airpla
     });
 
     return clonedModel;
-  }, [originalModel]);
+  }, [originalModel, color]);
 
   if (!airplaneModel) {
     return null;
@@ -93,12 +111,36 @@ export function Airplane({ startCity, endCity, maxHeight, speed = 0.05 }: Airpla
   const isForward = direction === 1;
 
   return (
-    <group ref={groupRef}>
-      <primitive
-        // eslint-disable-next-line react/no-unknown-property
-        object={airplaneModel}
-        scale={0.00002}
-        rotation={[Math.PI / 2, isForward ? Math.PI : 0, 0]}
+    <group>
+      <group ref={groupRef}>
+        <primitive
+          // eslint-disable-next-line react/no-unknown-property
+          object={airplaneModel}
+          scale={0.00002}
+          rotation={[Math.PI / 2, isForward ? Math.PI : 0, 0]}
+        />
+        {/* Position emitters at the wing tips of the airplane for visible particle trails */}
+        <group ref={emitterLeft} position={[0.01, isForward ? -0.02 : 0.02, 0]}></group>
+        <group ref={emitterRight} position={[-0.01, isForward ? -0.02 : 0.02, 0]}></group>
+      </group>
+
+      {/* Add the particle systems */}
+      <AirplaneParticles
+        groupRef={emitterLeft}
+        color={color}
+        maxParticles={100}
+        emissionRate={2}
+        particleLifespan={6}
+        size={0.005}
+      />
+
+      <AirplaneParticles
+        groupRef={emitterRight}
+        color={color}
+        maxParticles={100}
+        emissionRate={2}
+        particleLifespan={6}
+        size={0.005}
       />
     </group>
   );
